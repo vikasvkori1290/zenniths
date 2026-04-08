@@ -6,13 +6,13 @@ import SidebarLayout from './layouts/SidebarLayout';
 import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
 import TeamDirectoryPage from './pages/TeamDirectoryPage';
+import ProjectsPage from './pages/ProjectsPage';
+import EventsPage from './pages/EventsPage';
+import ChallengesPage from './pages/ChallengesPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 // Placeholder pages (to be replaced in upcoming phases)
 const AdminPage = () => <div style={{ padding: '2rem', color: 'var(--color-text-primary)' }}>Admin Panel — Phase 7</div>;
-const ProjectsPage = () => <div style={{ padding: '2rem', color: 'var(--color-text-primary)' }}>Projects — Phase 4</div>;
-const EventsPage = () => <div style={{ padding: '2rem', color: 'var(--color-text-primary)' }}>Events — Phase 5</div>;
-const ChallengesPage = () => <div style={{ padding: '2rem', color: 'var(--color-text-primary)' }}>Challenges — Phase 6</div>;
-const LeaderboardPage = () => <div style={{ padding: '2rem', color: 'var(--color-text-primary)' }}>Leaderboard — Phase 6</div>;
 
 function App() {
   return (

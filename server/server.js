@@ -13,6 +13,9 @@ const { registerSocketHandlers } = require('./socket');
 // ─── Route imports ───────────────────────────────────────────────────────────
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const eventRoutes = require('./routes/eventRoutes');
+const challengeRoutes = require('./routes/challengeRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 
 // ─── Connect to MongoDB ───────────────────────────────────────────────────────
@@ -49,6 +52,9 @@ app.use(cookieParser());
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/challenges', challengeRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Health check
