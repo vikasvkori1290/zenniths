@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { RiGithubFill, RiExternalLinkLine, RiArrowRightLeftLine } from 'react-icons/ri';
+import { RiGithubFill, RiExternalLinkLine, RiCodeSSlashLine } from 'react-icons/ri';
 import api from '../api/axios';
 
 const FeaturedProjectsCarousel = () => {
@@ -67,7 +67,7 @@ const FeaturedProjectsCarousel = () => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: 'var(--color-accent-primary)', fontSize: '1.5rem'
               }}>
-                <RiArrowRightLeftLine />
+                <RiCodeSSlashLine />
               </div>
 
               <div>
