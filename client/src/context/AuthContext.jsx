@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
+    if (data.requiresOtp) return data;
     localStorage.setItem('accessToken', data.accessToken);
     setUser(data.user);
     return data.user;
@@ -33,6 +34,14 @@ export const AuthProvider = ({ children }) => {
 
   const register = useCallback(async (name, email, password, mobile) => {
     const { data } = await api.post('/auth/register', { name, email, password, mobile });
+    if (data.requiresOtp) return data;
+    localStorage.setItem('accessToken', data.accessToken);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
+  const verifyOtp = useCallback(async (email, otp) => {
+    const { data } = await api.post('/auth/verify-otp', { email, otp });
     localStorage.setItem('accessToken', data.accessToken);
     setUser(data.user);
     return data.user;
@@ -52,7 +61,7 @@ export const AuthProvider = ({ children }) => {
   const isMember = user?.role === 'member' || isAdmin;
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAdmin, isMember }}>
+    <AuthContext.Provider value={{ user, loading, login, register, verifyOtp, logout, isAdmin, isMember }}>
       {children}
     </AuthContext.Provider>
   );

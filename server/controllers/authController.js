@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const sendEmail = require('../utils/sendEmail');
+const crypto = require('crypto');
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -25,34 +27,49 @@ const registerUser = async (req, res, next) => {
       return next(new Error('Please provide name, email, mobile and password'));
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      res.status(409);
-      return next(new Error('An account with this email already exists'));
+    let user = await User.findOne({ email });
+    if (user) {
+      if (user.isVerified) {
+        res.status(409);
+        return next(new Error('An account with this email already exists'));
+      } else {
+        // They are unverified. Overwrite their details manually to resend OTP
+        user.name = name;
+        user.password = password;
+        user.mobile = mobile;
+      }
+    } else {
+      // New user
+      user = new User({ name, email, password, mobile });
     }
 
-    const user = await User.create({ name, email, password, mobile });
-
-    const accessToken = generateAccessToken(user._id, user.role);
-    const refreshToken = generateRefreshToken(user._id);
-
-    user.refreshToken = refreshToken;
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+    user.otp = otp;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save({ validateBeforeSave: false });
 
-    attachRefreshToken(res, refreshToken);
+    // Send email
+    const message = `
+      <h2>Welcome to ClubFlow!</h2>
+      <p>Your email verification code is: <strong>${otp}</strong></p>
+      <p>This code will expire in 10 minutes.</p>
+    `;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Verify your ClubFlow account',
+        html: message,
+      });
+    } catch (error) {
+      console.log('Error sending email', error);
+    }
 
     res.status(201).json({
       success: true,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        mobile: user.mobile,
-        role: user.role,
-        avatar: user.avatar,
-        techStack: user.techStack,
-      },
-      accessToken,
+      requiresOtp: true,
+      message: 'Registration successful! Please check your email for the OTP.',
     });
   } catch (err) {
     next(err);
@@ -76,6 +93,31 @@ const loginUser = async (req, res, next) => {
       return next(new Error('Invalid email or password'));
     }
 
+    if (!user.isVerified && user.role !== 'admin') {
+      // Send new OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.otp = otp;
+      user.otpExpires = Date.now() + 10 * 60 * 1000;
+      await user.save({ validateBeforeSave: false });
+
+      try {
+        await sendEmail({
+          email: user.email,
+          subject: 'ClubFlow OTP Verification',
+          html: `<p>Your verification code is: <strong>${otp}</strong>.</p><p>It will expire in 10 minutes.</p>`
+        });
+      } catch (emailErr) {
+        console.error('Failed to send OTP email during login:', emailErr.message);
+        // Still continue — user can request OTP again
+      }
+
+      return res.status(200).json({
+        success: true,
+        requiresOtp: true,
+        message: 'Your account is not verified yet. A new OTP has been sent to your email.'
+      });
+    }
+
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id);
 
@@ -88,12 +130,18 @@ const loginUser = async (req, res, next) => {
       success: true,
       user: {
         _id: user._id,
+        id: user._id,
         name: user.name,
         email: user.email,
         mobile: user.mobile,
         role: user.role,
         avatar: user.avatar,
         techStack: user.techStack,
+        usn: user.usn,
+        course: user.course,
+        batch: user.batch,
+        bio: user.bio,
+        github: user.github,
       },
       accessToken,
     });
@@ -138,6 +186,68 @@ const logoutUser = async (req, res, next) => {
   }
 };
 
+// ─── POST /api/auth/verify-otp ────────────────────────────────────────────────
+const verifyOtp = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      res.status(400);
+      return next(new Error('Please provide email and OTP code.'));
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(404);
+      return next(new Error('User not found.'));
+    }
+
+    if (user.isVerified) {
+      res.status(400);
+      return next(new Error('User is already verified.'));
+    }
+
+    if (user.otp !== otp || user.otpExpires < Date.now()) {
+      res.status(400);
+      return next(new Error('Invalid or expired OTP. Please try logging in again to request a new code.'));
+    }
+
+    // Success! Mark as verified
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+
+    const accessToken = generateAccessToken(user._id, user.role);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    attachRefreshToken(res, refreshToken);
+
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        role: user.role,
+        avatar: user.avatar,
+        techStack: user.techStack,
+        usn: user.usn,
+        course: user.course,
+        batch: user.batch,
+        bio: user.bio,
+        github: user.github,
+      },
+      accessToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── GET /api/auth/me ─────────────────────────────────────────────────────────
 const getMe = async (req, res, next) => {
   try {
@@ -152,4 +262,11 @@ const getMe = async (req, res, next) => {
   }
 };
 
-module.exports = { registerUser, loginUser, refreshAccessToken, logoutUser, getMe };
+module.exports = {
+  registerUser,
+  loginUser,
+  refreshAccessToken,
+  logoutUser,
+  verifyOtp,
+  getMe,
+};

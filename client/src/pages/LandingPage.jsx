@@ -2,7 +2,6 @@ import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import EventsStrip from '../components/EventsStrip';
-import FeaturedProjects from '../components/FeaturedProjects';
 import LeaderboardSnippet from '../components/LeaderboardSnippet';
 import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
@@ -20,7 +19,6 @@ const LandingPage = () => {
       <main style={{ flex: 1 }}>
         <HeroSection onOpenAuth={openAuth} />
         <EventsStrip />
-        <FeaturedProjects />
         <LeaderboardSnippet />
       </main>
 

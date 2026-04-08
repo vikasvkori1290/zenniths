@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RiCalendarEventLine, RiMapPinLine, RiTimeLine, RiTeamLine,
-  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine
+  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine
 } from 'react-icons/ri';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -68,7 +68,7 @@ const TeamRosterCard = ({ team }) => {
   );
 };
 
-const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, currentUserId, isAdmin, onOpenRoster, onPosterClick }) => {
+const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, currentUserId, isAdmin, onOpenRoster, onPosterClick, user, onShowAlert }) => {
   const isRegistered = event.registeredUsers?.includes(currentUserId);
   const hasTeamRegistered = event.teams?.some(t => (t.leader?._id || t.leader) === currentUserId);
   const [loading, setLoading] = useState(false);
@@ -88,6 +88,16 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
 
   const handleRegister = async () => {
     if (loading) return;
+
+    if (!isAdmin && (!user?.usn || !user?.course || !user?.batch || !user?.mobile)) {
+      onShowAlert({
+        title: "Profile Incomplete",
+        message: "Please complete your mandatory profile details (USN, Course, Batch, Mobile Number) from the top right user menu before registering for events!",
+        type: "warning"
+      });
+      return;
+    }
+
     if (isTeamEvent && !isRegistered && !hasTeamRegistered) {
       setShowTeamModal(true);
       return;
@@ -172,8 +182,32 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
             </span>
           )}
         </div>
-        {isAdmin && (
-          <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const url = `${window.location.origin}/events?id=${event._id}`;
+              navigator.clipboard.writeText(url);
+              onShowAlert({ title: "Link Copied!", message: "The event link has been copied to your clipboard. Share it with your friends!", type: "success" });
+            }}
+            style={{
+              width: '34px', height: '34px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
+              border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#3b82f6',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              transition: 'transform 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            title="Share Link"
+          >
+            <RiShareForwardLine size={16} />
+          </button>
+          
+          {isAdmin && (
+            <>
             <button
               onClick={() => onEdit(event)}
               style={{
@@ -208,8 +242,9 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
             >
               <RiDeleteBinLine size={16} />
             </button>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -330,21 +365,21 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
                     <input required placeholder="Full Name" value={m.name} onChange={e => updateMember(idx, 'name', e.target.value)}
-                      style={{ padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
                     <input required type="email" placeholder="Email" value={m.email} onChange={e => updateMember(idx, 'email', e.target.value)}
-                      style={{ padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
                     <input required placeholder="USN Number" value={m.usn} onChange={e => updateMember(idx, 'usn', e.target.value)}
-                      style={{ padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem' }}>
                     <input placeholder="Mobile" value={m.mobile} onChange={e => updateMember(idx, 'mobile', e.target.value)}
-                      style={{ padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
                     <input required placeholder="Course" value={m.course} onChange={e => updateMember(idx, 'course', e.target.value)}
-                      style={{ padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
                     <input required placeholder="Batch (YYYY-YYYY)" pattern="\d{4}-\d{4}" value={m.batch} onChange={e => updateMember(idx, 'batch', e.target.value)}
-                      style={{ padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
                   </div>
                 </div>
               ))}
@@ -394,6 +429,7 @@ const EventsPage = () => {
   const [showCropperObj, setShowCropperObj] = useState(null); // { imageSrc, isEdit }
   const [posterPreview, setPosterPreview] = useState(null);
   const [editPosterPreview, setEditPosterPreview] = useState(null);
+  const [alertData, setAlertData] = useState(null);
 
   useEffect(() => {
     fetchEvents(activeTab);
@@ -614,7 +650,7 @@ const EventsPage = () => {
            {events.length > 0 ? (
             <motion.div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
               {events.map((event) => (
-                <EventCard key={event._id} event={event} onToggleRegister={handleToggleRegister} onDelete={handleDeleteEvent} onRegisterTeam={handleRegisterTeam} onEdit={openEditModal} currentUserId={user?.id} isAdmin={user?.role === 'admin'} onOpenRoster={handleOpenRoster} onPosterClick={setFullScreenPoster} />
+                <EventCard key={event._id} event={event} onToggleRegister={handleToggleRegister} onDelete={handleDeleteEvent} onRegisterTeam={handleRegisterTeam} onEdit={openEditModal} currentUserId={user?.id || user?._id} isAdmin={user?.role === 'admin'} onOpenRoster={handleOpenRoster} onPosterClick={setFullScreenPoster} user={user} onShowAlert={setAlertData} />
               ))}
              </motion.div>
           ) : (
@@ -998,6 +1034,37 @@ const EventsPage = () => {
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} 
             />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Alert Modal */}
+      <AnimatePresence>
+        {alertData && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', padding: '1rem', backdropFilter: 'blur(4px)' }}>
+             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               style={{ background: 'var(--color-bg-card)', borderRadius: '24px', border: '1px solid var(--color-border)', padding: '2.5rem 2rem', maxWidth: '420px', width: '100%', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', position: 'relative' }}>
+               
+               <button onClick={() => setAlertData(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}><RiCloseLine size={24} /></button>
+               
+               {alertData.type === 'warning' ? (
+                 <div style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+                   <RiInformationLine size={32} />
+                 </div>
+               ) : (
+                 <div style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+                   <RiCheckLine size={32} />
+                 </div>
+               )}
+               
+               <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--color-text-primary)' }}>{alertData.title}</h3>
+               <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>{alertData.message}</p>
+               
+               <button onClick={() => setAlertData(null)} style={{ padding: '0.875rem 2rem', width: '100%', background: alertData.type === 'warning' ? '#ef4444' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', transition: 'transform 0.2s' }}
+                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                 {alertData.type === 'warning' ? 'Update Profile' : 'Awesome'}
+               </button>
+             </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

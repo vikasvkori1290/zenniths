@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
-  const { login, register } = useAuth();
+  const { login, register, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState(initialTab);
   const [showPassword, setShowPassword] = useState(false);
@@ -13,12 +13,12 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
   const [error, setError] = useState('');
   const overlayRef = useRef(null);
 
-  const [form, setForm] = useState({ name: '', email: '', password: '', mobile: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', mobile: '', otp: '' });
 
   useEffect(() => {
     setTab(initialTab);
     setError('');
-    setForm({ name: '', email: '', password: '', mobile: '' });
+    setForm({ name: '', email: '', password: '', mobile: '', otp: '' });
   }, [initialTab, isOpen]);
 
   // Close on Escape
@@ -43,15 +43,28 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
     setLoading(true);
     try {
       if (tab === 'login') {
-        const user = await login(form.email, form.password);
-        onClose();
-        navigate(user.role === 'admin' ? '/admin' : '/dashboard');
-      } else {
+        const res = await login(form.email, form.password);
+        if (res.requiresOtp) {
+          setTab('verify');
+        } else {
+          onClose();
+          navigate(res.role === 'admin' ? '/admin' : '/dashboard');
+        }
+      } else if (tab === 'signup') {
         if (!form.name.trim()) { setError('Name is required'); setLoading(false); return; }
         if (!form.mobile.trim()) { setError('Mobile number is required'); setLoading(false); return; }
-        const user = await register(form.name, form.email, form.password, form.mobile);
+        const res = await register(form.name, form.email, form.password, form.mobile);
+        if (res.requiresOtp) {
+          setTab('verify');
+        } else {
+          onClose();
+          navigate('/dashboard');
+        }
+      } else if (tab === 'verify') {
+        if (!form.otp.trim()) { setError('OTP is required'); setLoading(false); return; }
+        const user = await verifyOtp(form.email, form.otp);
         onClose();
-        navigate('/dashboard');
+        navigate(user.role === 'admin' ? '/admin' : '/dashboard');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
@@ -114,15 +127,16 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
           {/* Header */}
           <div style={{ marginBottom: '1.75rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>
-              {tab === 'login' ? 'Welcome back 👋' : 'Join the Club 🚀'}
+              {tab === 'login' ? 'Welcome back 👋' : tab === 'verify' ? 'Check your email 📧' : 'Join the Club 🚀'}
             </h2>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-              {tab === 'login' ? 'Log in to access your dashboard' : 'Create your account to get started'}
+              {tab === 'login' ? 'Log in to access your dashboard' : tab === 'verify' ? 'Enter the 6-digit OTP sent to your email.' : 'Create your account to get started'}
             </p>
           </div>
 
           {/* Tab Toggle */}
-          <div style={{
+          {tab !== 'verify' && (
+            <div style={{
             display: 'flex',
             background: 'rgba(255,255,255,0.04)',
             borderRadius: '10px',
@@ -148,10 +162,13 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                 {t === 'login' ? 'Login' : 'Sign Up'}
               </button>
             ))}
-          </div>
+            </div>
+          )}
 
           {/* OAuth Buttons */}
-          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          {tab !== 'verify' && (
+            <>
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
             {[
               { icon: <RiGoogleFill size={18} />, label: 'Google', color: '#ea4335' },
               { icon: <RiGithubFill size={18} />, label: 'GitHub', color: '#fff' },
@@ -177,12 +194,14 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
             ))}
           </div>
 
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-            <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
-            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>OR</span>
-            <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
-          </div>
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+              <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em' }}>OR</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+            </div>
+            </>
+          )}
 
           {/* Error Alert */}
           <AnimatePresence>
@@ -254,7 +273,9 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
               </div>
             )}
 
-            <div>
+            {tab !== 'verify' && (
+              <>
+              <div>
               <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
                 Email Address
               </label>
@@ -313,6 +334,32 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                 </button>
               </div>
             </div>
+            </>
+            )}
+
+            {tab === 'verify' && (
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
+                  6-Digit OTP Code
+                </label>
+                <input
+                  name="otp" type="text" value={form.otp}
+                  onChange={handleChange} placeholder="e.g. 123456"
+                  required maxLength={6}
+                  style={{
+                    width: '100%', padding: '0.7rem 0.875rem',
+                    background: 'var(--color-bg-secondary)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '10px', color: 'var(--color-text-primary)',
+                    fontSize: '1.1rem', letterSpacing: '0.2em', outline: 'none',
+                    transition: 'border-color 0.2s', textAlign: 'center',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderColor = 'var(--color-accent-primary)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
+                />
+              </div>
+            )}
 
             <motion.button
               type="submit"
@@ -330,16 +377,7 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                 marginTop: '0.25rem',
               }}
             >
-              {loading ? (
-                <>
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                    <RiLoader4Line size={18} />
-                  </motion.div>
-                  {tab === 'login' ? 'Logging in...' : 'Creating account...'}
-                </>
-              ) : (
-                tab === 'login' ? 'Login →' : 'Create Account →'
-              )}
+              {loading ? <RiLoader4Line className="spin" size={20} /> : tab === 'login' ? 'Log In' : tab === 'verify' ? 'Verify OTP' : 'Create Account'}
             </motion.button>
           </form>
         </motion.div>

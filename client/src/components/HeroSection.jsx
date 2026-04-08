@@ -54,9 +54,11 @@ const HeroSection = ({ onOpenAuth }) => {
       {/* Grid overlay */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: `linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(rgba(124,58,237,0.10) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(124,58,237,0.10) 1px, transparent 1px)`,
         backgroundSize: '60px 60px',
+        WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
+        maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
       }} />
 
       <motion.div
@@ -149,21 +151,7 @@ const HeroSection = ({ onOpenAuth }) => {
         </motion.div>
       </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        style={{
-          position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem',
-        }}
-      >
-        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Scroll</span>
-        <div style={{
-          width: '1px', height: '40px',
-          background: 'linear-gradient(to bottom, var(--color-accent-primary), transparent)',
-        }} />
-      </motion.div>
+
     </section>
   );
 };
