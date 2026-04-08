@@ -23,6 +23,22 @@ const getDashboardStats = async (req, res, next) => {
   }
 };
 
+// ─── GET /api/admin/public-stats ──────────────────────────────────────────────
+const getPublicStats = async (req, res, next) => {
+  try {
+    const members = await User.countDocuments();
+    const projects = await Project.countDocuments();
+    const events = await Event.countDocuments();
+    
+    res.json({
+      success: true,
+      stats: { members, projects, events }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── GET /api/admin/submissions/pending ───────────────────────────────────────
 const getPendingSubmissions = async (req, res, next) => {
   try {
@@ -92,6 +108,7 @@ const gradeSubmission = async (req, res, next) => {
 
 module.exports = {
   getDashboardStats,
+  getPublicStats,
   getPendingSubmissions,
   gradeSubmission,
 };

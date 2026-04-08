@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RiCalendarEventLine, RiMapPinLine, RiTimeLine, RiTeamLine,
-  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine
+  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine, RiDownloadLine
 } from 'react-icons/ri';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -603,6 +603,36 @@ const EventsPage = () => {
     } catch (e) { console.error('Crop error', e); }
   };
 
+  const handleExportCSV = () => {
+    if (!rosterData) return;
+    let csvStr = '';
+    
+    if (rosterData.isTeamEvent && rosterData.teams?.length > 0) {
+      csvStr += 'Team Name,Role,Name,Email,Mobile,Course/Branch,Batch,USN,Tech Stack\n';
+      rosterData.teams.forEach(team => {
+        const l = team.leader || {};
+        csvStr += `"${team.teamName}","Leader","${l.name || ''}","${l.email || ''}","'${l.mobile || ''}","${l.course || ''}","${l.batch || ''}","${(l.usn || '').toUpperCase()}","${(l.techStack || []).join('; ')}"\n`;
+        (team.members || []).forEach(m => {
+          csvStr += `"${team.teamName}","Member","${m.name || ''}","${m.email || ''}","'${m.phno || m.mobile || ''}","${m.course || m.branch || ''}","${m.batch || ''}","${(m.usn || '').toUpperCase()}","${(m.techStack || []).join('; ')}"\n`;
+        });
+      });
+    } else {
+      csvStr += 'Name,Email,Mobile,Course,Batch,USN,Tech Stack\n';
+      (rosterData.users || []).forEach(u => {
+        csvStr += `"${u.name || ''}","${u.email || ''}","'${u.mobile || ''}","${u.course || ''}","${u.batch || ''}","${(u.usn || '').toUpperCase()}","${(u.techStack || []).join('; ')}"\n`;
+      });
+    }
+
+    const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${rosterData.eventTitle.replace(/[^a-zA-Z0-9]/g, '_')}_Attendees.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div style={{ maxWidth: '1200px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -667,17 +697,14 @@ const EventsPage = () => {
         </AnimatePresence>
       )}
 
-      {/* Media Gallery Section placeholder (will be used to display photos from past events later) */}
+      {/* Quick link to Gallery for past events */}
       {activeTab === 'past' && events.length > 0 && (
-         <div style={{ marginTop: '5rem' }}>
-           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>Past Event Highlights</h2>
-           <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>A glimpse into our past activities.</p>
-           {/* Gallery grid goes here */}
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-              <div style={{ height: '200px', background: 'var(--color-bg-card)', borderRadius: '12px', border: '1px dashed var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Images coming soon...</span>
-              </div>
-           </div>
+         <div style={{ marginTop: '5rem', textAlign: 'center' }}>
+           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>See the Action</h2>
+           <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>Check out the full media gallery of our past club victories.</p>
+           <a href="/#gallery" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 1.5rem', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-accent-primary)', fontWeight: 700, textDecoration: 'none' }}>
+             Open Media Gallery <RiArrowRightLine />
+           </a>
          </div>
       )}
 
@@ -691,13 +718,13 @@ const EventsPage = () => {
           }}>
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} style={{
               background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '24px',
-              width: '100%', maxWidth: '500px', overflow: 'hidden',
+              width: '100%', maxWidth: '500px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
             }}>
               <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '800', fontSize: '1.25rem' }}>
                 Create New Event
               </div>
-              <form onSubmit={handleCreateSubmit} style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <form onSubmit={handleCreateSubmit} style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
                 {/* Poster Upload */}
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Event Poster</label>
@@ -934,7 +961,12 @@ const EventsPage = () => {
                   <h3 style={{ fontWeight: '800', fontSize: '1.25rem', marginBottom: '0.2rem' }}>Attendee Roster</h3>
                   <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{rosterData.eventTitle} ({rosterData.users.length} registered)</div>
                 </div>
-                <button onClick={() => setRosterData(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <button onClick={handleExportCSV} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                    <RiDownloadLine size={16} /> Export to Excel
+                  </button>
+                  <button onClick={() => setRosterData(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}><RiCloseLine /></button>
+                </div>
               </div>
               
               <div style={{ padding: '1.5rem 2rem', overflowY: 'auto' }}>

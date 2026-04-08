@@ -18,6 +18,8 @@ const eventRoutes = require('./routes/eventRoutes');
 const challengeRoutes = require('./routes/challengeRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const galleryRoutes = require('./routes/galleryRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
 
 // ─── Connect to MongoDB ───────────────────────────────────────────────────────
 connectDB();
@@ -46,8 +48,8 @@ app.use(
     credentials: true, // Allow cookies (refresh token)
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
@@ -58,6 +60,8 @@ app.use('/api/events', eventRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/gallery', galleryRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

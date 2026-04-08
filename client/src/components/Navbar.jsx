@@ -18,6 +18,7 @@ const Navbar = ({ onOpenAuth }) => {
     { label: 'Events', href: '#events' },
     { label: 'Projects', href: '#projects' },
     { label: 'Leaderboard', href: '#leaderboard' },
+    { label: 'Gallery', href: '#gallery' },
   ];
 
   return (

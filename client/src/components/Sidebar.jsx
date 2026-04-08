@@ -41,12 +41,15 @@ const Sidebar = ({ collapsed, onToggle }) => {
       }}
     >
       {/* Logo */}
-      <div style={{
+      <div 
+        onClick={() => navigate('/')}
+        style={{
         padding: collapsed ? '1.25rem 0' : '1.25rem 1.25rem',
         display: 'flex', alignItems: 'center',
         gap: '0.75rem', borderBottom: '1px solid var(--color-border)',
         justifyContent: collapsed ? 'center' : 'flex-start',
         minHeight: '68px',
+        cursor: 'pointer',
       }}>
         <img
           src="/logo.png"

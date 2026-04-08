@@ -358,7 +358,8 @@ const DashboardPage = () => {
       </motion.div>
 
       {/* Danger Zone */}
-      <motion.div variants={itemVariants} style={{
+      {user?.role !== 'admin' && (
+        <motion.div variants={itemVariants} style={{
         marginTop: '2.5rem',
         padding: '1.5rem',
         border: '1px solid rgba(239, 68, 68, 0.2)',
@@ -398,6 +399,7 @@ const DashboardPage = () => {
           Delete Account
         </button>
       </motion.div>
+      )}
 
       {/* Edit Profile Modal */}
       <AnimatePresence>

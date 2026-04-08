@@ -3,6 +3,10 @@ import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import EventsStrip from '../components/EventsStrip';
 import LeaderboardSnippet from '../components/LeaderboardSnippet';
+import PublicGallery from '../components/PublicGallery';
+import AnnouncementTicker from '../components/AnnouncementTicker';
+import FeaturedProjectsCarousel from '../components/FeaturedProjectsCarousel';
+import ChallengesPreview from '../components/ChallengesPreview';
 import Footer from '../components/Footer';
 import AuthModal from '../components/AuthModal';
 
@@ -16,10 +20,14 @@ const LandingPage = () => {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar onOpenAuth={openAuth} />
 
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1, paddingTop: '64px' }}>
+        <AnnouncementTicker />
         <HeroSection onOpenAuth={openAuth} />
         <EventsStrip />
+        <FeaturedProjectsCarousel />
+        <ChallengesPreview />
         <LeaderboardSnippet />
+        <PublicGallery />
       </main>
 
       <Footer />
