@@ -79,6 +79,17 @@ const DashboardPage = () => {
     leetcodeUrl: '', linkedinUrl: '', usn: '', course: '', batch: '' 
   });
   const [submittingProfile, setSubmittingProfile] = useState(false);
+  const [showPwChange, setShowPwChange] = useState(false);
+  const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' });
+  const [pwMsg, setPwMsg] = useState({ type: '', text: '' });
+  const [submittingPw, setSubmittingPw] = useState(false);
+
+  const getRankBadge = (score = 0) => {
+    if (score >= 1000) return { label: '👑 Legend', color: '#f59e0b' };
+    if (score >= 500) return { label: '🔥 Expert', color: '#ef4444' };
+    if (score >= 100) return { label: '⚡ Contributor', color: '#7c3aed' };
+    return { label: '🌱 Newbie', color: '#10b981' };
+  };
 
   useEffect(() => {
     if (user) {
@@ -110,12 +121,35 @@ const DashboardPage = () => {
         batch: profileForm.batch,
       };
       await api.put('/users/profile', payload);
-      window.location.reload(); // Quick refresh to pull new auth context state
+      window.location.reload();
     } catch (err) {
       console.error(err);
       alert('Failed to update profile');
     } finally {
       setSubmittingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPwMsg({ type: '', text: '' });
+    if (pwForm.newPw !== pwForm.confirm) {
+      setPwMsg({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+    if (pwForm.newPw.length < 6) {
+      setPwMsg({ type: 'error', text: 'Password must be at least 6 characters.' });
+      return;
+    }
+    setSubmittingPw(true);
+    try {
+      await api.post('/auth/change-password', { currentPassword: pwForm.current, newPassword: pwForm.newPw });
+      setPwMsg({ type: 'success', text: 'Password changed successfully!' });
+      setPwForm({ current: '', newPw: '', confirm: '' });
+    } catch (err) {
+      setPwMsg({ type: 'error', text: err.response?.data?.message || 'Failed to change password.' });
+    } finally {
+      setSubmittingPw(false);
     }
   };
 
@@ -269,15 +303,13 @@ const DashboardPage = () => {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
               <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{user?.name}</h2>
-              <span style={{
-                fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.7rem',
-                borderRadius: '100px', textTransform: 'capitalize', letterSpacing: '0.05em',
-                background: user?.role === 'admin' ? 'rgba(245,158,11,0.15)' : 'var(--color-bg-secondary)',
-                border: user?.role === 'admin' ? '1px solid rgba(245,158,11,0.4)' : '1px solid var(--color-border-hover)',
-                color: user?.role === 'admin' ? '#f59e0b' : 'var(--color-accent-primary)',
-              }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.7rem', borderRadius: '100px', textTransform: 'capitalize', letterSpacing: '0.05em', background: user?.role === 'admin' ? 'rgba(245,158,11,0.15)' : 'var(--color-bg-secondary)', border: user?.role === 'admin' ? '1px solid rgba(245,158,11,0.4)' : '1px solid var(--color-border-hover)', color: user?.role === 'admin' ? '#f59e0b' : 'var(--color-accent-primary)' }}>
                 {user?.role}
               </span>
+              {/* Rank Badge */}
+              {(() => { const rb = getRankBadge(stats.score); return (
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.7rem', borderRadius: '100px', background: `${rb.color}18`, border: `1px solid ${rb.color}40`, color: rb.color }}>{rb.label}</span>
+              ); })()}
             </div>
             <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
               {user?.email} {user?.mobile && `• ${user.mobile}`}
@@ -458,6 +490,25 @@ const DashboardPage = () => {
                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.4rem' }}>LeetCode URL (Optional)</label>
                      <input type="url" value={profileForm.leetcodeUrl} onChange={e => setProfileForm({...profileForm, leetcodeUrl: e.target.value})} placeholder="https://leetcode.com/u/username" style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
                    </div>
+                </div>
+
+                {/* ── Change Password ── */}
+                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem', marginTop: '0.25rem' }}>
+                  <button type="button" onClick={() => { setShowPwChange(p => !p); setPwMsg({ type: '', text: '' }); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.9rem', borderRadius: '10px', border: '1px solid var(--color-border)', background: showPwChange ? 'rgba(124,58,237,0.1)' : 'var(--color-bg-secondary)', color: showPwChange ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', transition: 'all 0.2s', marginBottom: showPwChange ? '1rem' : 0 }}>
+                    🔑 {showPwChange ? 'Hide' : 'Change Password'}
+                  </button>
+                  {showPwChange && (
+                    <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {pwMsg.text && <div style={{ padding: '0.6rem 0.9rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600, background: pwMsg.type === 'success' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: pwMsg.type === 'success' ? '#10b981' : '#ef4444', border: `1px solid ${pwMsg.type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}` }}>{pwMsg.text}</div>}
+                      {[{ label: 'Current Password', key: 'current' }, { label: 'New Password', key: 'newPw' }, { label: 'Confirm New Password', key: 'confirm' }].map(f => (
+                        <div key={f.key}>
+                          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>{f.label}</label>
+                          <input type="password" required value={pwForm[f.key]} onChange={e => setPwForm(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: '100%', padding: '0.75rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '10px', color: 'var(--color-text-primary)', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                      ))}
+                      <button type="submit" disabled={submittingPw} style={{ padding: '0.75rem', borderRadius: '10px', background: 'var(--color-accent-primary)', border: 'none', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem' }}>{submittingPw ? 'Saving...' : 'Update Password'}</button>
+                    </form>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexShrink: 0 }}>

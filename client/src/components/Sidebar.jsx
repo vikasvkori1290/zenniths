@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RiCodeSSlashLine, RiDashboardLine, RiTeamLine, RiFolderLine,
   RiCalendarEventLine, RiFlashlightLine, RiTrophyLine,
   RiMenuLine, RiCloseLine, RiLogoutBoxLine, RiShieldLine,
-  RiArrowLeftSLine, RiArrowRightSLine,
+  RiArrowLeftSLine, RiArrowRightSLine, RiImageAddLine,
 } from 'react-icons/ri';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
 const Sidebar = ({ collapsed, onToggle }) => {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
@@ -108,32 +109,48 @@ const Sidebar = ({ collapsed, onToggle }) => {
           </NavLink>
         ))}
 
-        {/* Admin Link */}
+        {/* Admin Links */}
         {isAdmin && (
-          <NavLink
-            to="/admin"
-            style={({ isActive }) => ({
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: collapsed ? '0.75rem' : '0.7rem 0.875rem',
-              borderRadius: '10px', textDecoration: 'none',
-              fontWeight: 600, fontSize: '0.875rem',
-              justifyContent: collapsed ? 'center' : 'flex-start',
-              color: isActive ? '#f59e0b' : 'var(--color-text-muted)',
-              background: isActive ? 'rgba(245,158,11,0.1)' : 'transparent',
-              border: isActive ? '1px solid rgba(245,158,11,0.25)' : '1px solid transparent',
-              marginTop: '0.5rem',
+          <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+            {!collapsed && <div style={{ marginBottom: '0.75rem', paddingLeft: '0.875rem', fontSize: '0.65rem', fontWeight: 800, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Admin Tools</div>}
+            {[
+              { to: '/admin?tab=dashboard', icon: <RiShieldLine size={20} />, label: 'Admin Dashboard' },
+              { to: '/admin?tab=users', icon: <RiTeamLine size={20} />, label: 'User Management' },
+              { to: '/admin?tab=attendance', icon: <RiCalendarEventLine size={20} />, label: 'Event Attendance' },
+              { to: '/admin?tab=gallery', icon: <RiImageAddLine size={20} />, label: 'Gallery Uploader' }
+            ].map(({ to, icon, label }) => {
+              const baseTo = to.split('?')[0];
+              const query = to.split('?')[1];
+              const isActive = location.pathname === baseTo && location.search.includes(query);
+              return (
+                <NavLink
+                  key={to} to={to}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                    padding: collapsed ? '0.75rem' : '0.65rem 0.875rem',
+                    borderRadius: '10px', textDecoration: 'none',
+                    fontWeight: 600, fontSize: '0.875rem',
+                    justifyContent: collapsed ? 'center' : 'flex-start',
+                    color: isActive ? '#f59e0b' : 'var(--color-text-muted)',
+                    background: isActive ? 'rgba(245,158,11,0.1)' : 'transparent',
+                    border: isActive ? '1px solid rgba(245,158,11,0.25)' : '1px solid transparent',
+                    marginBottom: '0.25rem',
+                    transition: 'all 0.18s'
+                  }}
+                  title={collapsed ? label : ''}
+                >
+                  <span style={{ flexShrink: 0 }}>{icon}</span>
+                  <AnimatePresence>
+                    {!collapsed && (
+                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ whiteSpace: 'nowrap' }}>
+                        {label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </NavLink>
+              );
             })}
-            title={collapsed ? 'Admin' : ''}
-          >
-            <RiShieldLine size={20} style={{ flexShrink: 0 }} />
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  Admin Panel
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </NavLink>
+          </div>
         )}
       </nav>
 

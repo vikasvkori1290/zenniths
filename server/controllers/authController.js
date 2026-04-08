@@ -262,11 +262,39 @@ const getMe = async (req, res, next) => {
   }
 };
 
+// ─── POST /api/auth/change-password ──────────────────────────────────────────
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      res.status(400);
+      return next(new Error('Current and new password are required'));
+    }
+    if (newPassword.length < 6) {
+      res.status(400);
+      return next(new Error('New password must be at least 6 characters'));
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user || !user.password) {
+      res.status(400);
+      return next(new Error('Cannot change password for social-login accounts'));
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      res.status(401);
+      return next(new Error('Current password is incorrect'));
+    }
+
+    user.password = newPassword;
+    await user.save();
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
-  registerUser,
-  loginUser,
-  refreshAccessToken,
-  logoutUser,
-  verifyOtp,
-  getMe,
+  registerUser, loginUser, refreshAccessToken, logoutUser, verifyOtp, getMe, changePassword,
 };

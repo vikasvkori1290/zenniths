@@ -5,10 +5,15 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const passport = require('passport');
 
 const connectDB = require('./utils/db');
 const errorHandler = require('./middleware/errorHandler');
 const { registerSocketHandlers } = require('./socket');
+
+// Load Passport Config
+require('./config/passportConfig');
 
 // ─── Route imports ───────────────────────────────────────────────────────────
 const authRoutes = require('./routes/authRoutes');
@@ -51,6 +56,19 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Sessions & Passport
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'clubhub_secret_key_change_me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);

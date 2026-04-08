@@ -106,9 +106,108 @@ const gradeSubmission = async (req, res, next) => {
   }
 };
 
+// ─── GET /api/admin/analytics ────────────────────────────────────────────────
+// Aggregates signups and submissions for the last 7 days
+const getAnalytics = async (req, res, next) => {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Aggregate Users per day
+    const signupData = await User.aggregate([
+      { $match: { createdAt: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Aggregate Submissions per day
+    const submissionData = await Submission.aggregate([
+      { $match: { createdAt: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        signups: signupData,
+        submissions: submissionData
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── GET /api/admin/users ────────────────────────────────────────────────
+// Returns paginated list of all platform users for admin management
+const getAdminUsers = async (req, res, next) => {
+  try {
+    const users = await User.find({})
+      .select('name email role avatar createdAt isVerified')
+      .sort({ createdAt: -1 })
+      .limit(100);
+    res.json({ success: true, users });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── PATCH /api/admin/users/:id/role ──────────────────────────────────────
+const updateAdminUserRole = async (req, res, next) => {
+  try {
+    const { role } = req.body;
+    if (!['member', 'admin'].includes(role)) {
+      res.status(400); return next(new Error('Invalid role'));
+    }
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+    if (!user) { res.status(404); return next(new Error('User not found')); }
+    res.json({ success: true, user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── DELETE /api/admin/users/:id ───────────────────────────────────────────
+const deleteAdminUser = async (req, res, next) => {
+  try {
+    if (req.params.id === req.user.id) {
+      res.status(400); return next(new Error("You can't delete yourself"));
+    }
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) { res.status(404); return next(new Error('User not found')); }
+    res.json({ success: true, message: 'User deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── PATCH /api/admin/events/:id/attendance ───────────────────────────────
+const saveEventAttendance = async (req, res, next) => {
+  try {
+    const { attendedEmails } = req.body;
+    if (!Array.isArray(attendedEmails)) {
+      res.status(400); return next(new Error('attendedEmails must be an array'));
+    }
+    const event = await Event.findByIdAndUpdate(req.params.id, { attendedEmails }, { new: true });
+    if (!event) { res.status(404); return next(new Error('Event not found')); }
+    res.json({ success: true, event });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
-  getDashboardStats,
-  getPublicStats,
-  getPendingSubmissions,
-  gradeSubmission,
+  getDashboardStats, getPublicStats, getPendingSubmissions, gradeSubmission, getAnalytics,
+  getAdminUsers, updateAdminUserRole, deleteAdminUser, saveEventAttendance,
 };

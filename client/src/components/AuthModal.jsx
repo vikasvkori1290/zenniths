@@ -175,6 +175,9 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
             ].map(({ icon, label, color }) => (
               <button
                 key={label}
+                onClick={() => {
+                  window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/${label.toLowerCase()}`;
+                }}
                 style={{
                   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   gap: '0.5rem', padding: '0.65rem',
@@ -186,7 +189,6 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'var(--color-border-hover)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'var(--color-border)'; }}
-                title={`Continue with ${label} (coming soon)`}
               >
                 {icon}
                 <span style={{ color: 'var(--color-text-primary)' }}>{label}</span>

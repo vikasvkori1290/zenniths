@@ -16,6 +16,7 @@ const eventSchema = new mongoose.Schema(
     date: {
       type: Date,
       required: [true, 'Event date is required'],
+      index: true,
     },
     location: {
       type: String,
@@ -23,7 +24,7 @@ const eventSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['Workshop', 'Hackathon', 'Seminar', 'Social', 'Other'],
+      enum: ['Workshop', 'Hackathon', 'Seminar', 'Social', 'Talk', 'Competition', 'Other'],
       default: 'Workshop',
     },
     poster: {
@@ -58,6 +59,13 @@ const eventSchema = new mongoose.Schema(
       default: 1,
       min: 1,
     },
+    attendedEmails: [
+      {
+        type: String,
+        trim: true,
+        lowercase: true,
+      }
+    ],
     teams: [
       {
         teamName: { type: String, required: true },

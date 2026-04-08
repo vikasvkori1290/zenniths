@@ -15,22 +15,35 @@ exports.getGalleryImages = async (req, res) => {
 // Upload new image (Admin Only)
 exports.uploadImage = async (req, res) => {
   try {
-    if (!req.body.image) {
-      return res.status(400).json({ success: false, message: 'Please provide an image' });
+    const fileData = req.body.images || (req.body.image ? [req.body.image] : null);
+
+    if (!fileData || !Array.isArray(fileData) || fileData.length === 0) {
+      return res.status(400).json({ success: false, message: 'Please provide an image or images' });
     }
 
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(req.body.image, {
-      folder: 'clubhub/gallery',
-    });
+    if (fileData.length > 15) {
+       return res.status(400).json({ success: false, message: 'You can upload a maximum of 15 images at a time' });
+    }
 
-    const newImage = await Gallery.create({
-      url: result.secure_url,
+    // Upload all to Cloudinary concurrently
+    const uploadPromises = fileData.map((fileBase64) =>
+      cloudinary.uploader.upload(fileBase64, {
+        folder: 'clubhub/gallery',
+      })
+    );
+
+    const uploadResults = await Promise.all(uploadPromises);
+
+    // Create DB records
+    const galleryDocs = uploadResults.map(res => ({
+      url: res.secure_url,
       title: req.body.title || 'Event Memory',
       uploadedBy: req.user.id
-    });
+    }));
 
-    res.status(201).json({ success: true, data: newImage });
+    const newImages = await Gallery.insertMany(galleryDocs);
+
+    res.status(201).json({ success: true, data: newImages });
   } catch (error) {
     console.error('Gallery upload error:', error);
     res.status(500).json({ success: false, message: 'Failed to upload image' });

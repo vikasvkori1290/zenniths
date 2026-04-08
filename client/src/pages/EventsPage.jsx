@@ -1,13 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RiCalendarEventLine, RiMapPinLine, RiTimeLine, RiTeamLine,
-  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine, RiDownloadLine
+  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine, RiDownloadLine, RiArrowRightLine
 } from 'react-icons/ri';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
+
+// ── Live Countdown Timer ───────────────────────────────────────────────────
+const CountdownTimer = ({ targetDate }) => {
+  const calcTimeLeft = () => {
+    const diff = new Date(targetDate) - new Date();
+    if (diff <= 0) return null;
+    return {
+      d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      h: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      m: Math.floor((diff / 1000 / 60) % 60),
+      s: Math.floor((diff / 1000) % 60),
+    };
+  };
+  const [timeLeft, setTimeLeft] = useState(calcTimeLeft());
+  useEffect(() => {
+    const t = setInterval(() => setTimeLeft(calcTimeLeft()), 1000);
+    return () => clearInterval(t);
+  }, [targetDate]);
+
+  if (!timeLeft) return <span style={{ fontSize: '0.72rem', color: '#ef4444', fontWeight: 700 }}>Event Started!</span>;
+  const urgent = timeLeft.d === 0;
+  const pad = n => String(n).padStart(2, '0');
+  return (
+    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: urgent ? '#ef4444' : 'var(--color-accent-secondary)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', letterSpacing: '0.03em' }}>
+      {timeLeft.d > 0 && <>{timeLeft.d}d </>}{pad(timeLeft.h)}:{pad(timeLeft.m)}:{pad(timeLeft.s)}
+    </span>
+  );
+};
+
 
 // ── Team Roster Card Wrapper ───────────────────────────────────────────────
 const TeamRosterCard = ({ team }) => {
@@ -259,6 +288,11 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
             <RiTimeLine size={16} color="var(--color-accent-secondary)" />
             {eventDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+            {isUpcoming && (
+              <span style={{ marginLeft: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(6,182,212,0.08)', padding: '0.1rem 0.6rem', borderRadius: '100px', border: '1px solid rgba(6,182,212,0.2)' }}>
+                ⏱ <CountdownTimer targetDate={event.date} />
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
             <RiMapPinLine size={16} color="#ef4444" />
@@ -753,7 +787,7 @@ const EventsPage = () => {
                     style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
                   <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
                     style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }}>
-                    <option>Workshop</option><option>Hackathon</option><option>Seminar</option><option>Social</option><option>Other</option>
+                    <option>Workshop</option><option>Hackathon</option><option>Seminar</option><option>Talk</option><option>Competition</option><option>Social</option><option>Other</option>
                   </select>
                 </div>
 
@@ -879,7 +913,7 @@ const EventsPage = () => {
                     style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
                   <select value={editForm.category} onChange={e => setEditForm({...editForm, category: e.target.value})}
                     style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }}>
-                    <option>Workshop</option><option>Hackathon</option><option>Seminar</option><option>Social</option><option>Other</option>
+                    <option>Workshop</option><option>Hackathon</option><option>Seminar</option><option>Talk</option><option>Competition</option><option>Social</option><option>Other</option>
                   </select>
                 </div>
                 <input required placeholder="Location" value={editForm.location} onChange={e => setEditForm({...editForm, location: e.target.value})}

@@ -13,6 +13,7 @@ const getAllEvents = async (req, res, next) => {
     }
 
     const events = await Event.find(query)
+      .select('-teams.members')
       .populate('createdBy', 'name')
       .sort({ date: status === 'past' ? -1 : 1 }); // Descending for past, Ascending for upcoming
 
