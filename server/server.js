@@ -16,6 +16,7 @@ const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const challengeRoutes = require('./routes/challengeRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 
 // ─── Connect to MongoDB ───────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/challenges', challengeRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Health check

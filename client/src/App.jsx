@@ -10,9 +10,7 @@ import ProjectsPage from './pages/ProjectsPage';
 import EventsPage from './pages/EventsPage';
 import ChallengesPage from './pages/ChallengesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
-
-// Placeholder pages (to be replaced in upcoming phases)
-const AdminPage = () => <div style={{ padding: '2rem', color: 'var(--color-text-primary)' }}>Admin Panel — Phase 7</div>;
+import AdminPanelPage from './pages/AdminPanelPage';
 
 function App() {
   return (
@@ -38,7 +36,7 @@ function App() {
             {/* Admin-only protected routes */}
             <Route element={<AdminRoute />}>
               <Route element={<SidebarLayout />}>
-                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin" element={<AdminPanelPage />} />
               </Route>
             </Route>
           </Routes>
