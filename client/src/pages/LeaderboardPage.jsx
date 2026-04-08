@@ -9,7 +9,7 @@ const MEDAL_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
 const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const socket = useSocket();
+  const { socket } = useSocket();
 
   useEffect(() => {
     fetchLeaderboard();
@@ -84,12 +84,12 @@ const LeaderboardPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                   {/* Avatar */}
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '1.2rem', overflow: 'hidden' }}>
-                    {user.avatar ? <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : user.name.charAt(0).toUpperCase()}
+                    {user.avatar ? <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : (user.name || '?').charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>{user.name}</h3>
                     <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.4rem' }}>
-                       {user.techStack?.slice(0, 3).map(tech => (
+                       {(user.techStack || []).slice(0, 3).map(tech => (
                          <span key={tech} style={{ fontSize: '0.65rem', background: 'var(--color-bg-secondary)', padding: '0.1rem 0.4rem', borderRadius: '4px', color: 'var(--color-text-secondary)' }}>{tech}</span>
                        ))}
                     </div>

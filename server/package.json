@@ -1,7 +1,7 @@
 {
   "name": "clubhub-server",
   "version": "1.0.0",
-  "description": "Club Hub — Backend API Server",
+  "description": "ClubFlow — Backend API Server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

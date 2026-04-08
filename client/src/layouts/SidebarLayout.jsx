@@ -54,7 +54,7 @@ const SidebarLayout = () => {
           >
             <RiMenuLine size={22} />
           </button>
-          <span className="gradient-text" style={{ fontWeight: 800, fontSize: '1.1rem' }}>Club Hub</span>
+          <img src="/logo.png" alt="ClubFlow" style={{ height: '28px', objectFit: 'contain' }} />
         </div>
 
         <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>

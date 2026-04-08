@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema(
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // Never return password in queries by default
     },
+    mobile: {
+      type: String,
+      default: '',
+    },
     role: {
       type: String,
       enum: ['visitor', 'member', 'admin'],
@@ -40,6 +44,22 @@ const userSchema = new mongoose.Schema(
       default: '',
     },
     linkedinUrl: {
+      type: String,
+      default: '',
+    },
+    leetcodeUrl: {
+      type: String,
+      default: '',
+    },
+    usn: {
+      type: String,
+      default: '',
+    },
+    course: {
+      type: String,
+      default: '',
+    },
+    batch: {
       type: String,
       default: '',
     },

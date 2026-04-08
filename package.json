@@ -1,7 +1,7 @@
 {
   "name": "clubhub",
   "version": "1.0.0",
-  "description": "Club Hub — College Technical Club Platform (MERN Stack)",
+  "description": "ClubFlow — College Technical Club Platform (MERN Stack)",
   "private": true,
   "scripts": {
     "server": "cd server && npm run dev",

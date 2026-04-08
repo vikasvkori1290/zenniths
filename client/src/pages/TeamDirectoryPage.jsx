@@ -2,22 +2,13 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RiGithubFill, RiLinkedinBoxFill, RiSearchLine,
-  RiShieldLine, RiTeamLine, RiUserLine,
+  RiShieldLine, RiTeamLine, RiUserLine, RiCodeSSlashLine
 } from 'react-icons/ri';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import { Navigate } from 'react-router-dom';
 
-// ── Static fallback data ───────────────────────────────────────────────────
-const STATIC_MEMBERS = [
-  { _id: '1', name: 'Aryan Mehta', role: 'admin', email: 'aryan@example.com', techStack: ['React', 'Node.js', 'MongoDB'], githubUrl: '#', avatar: null, createdAt: '2024-01-15' },
-  { _id: '2', name: 'Priya Sharma', role: 'admin', email: 'priya@example.com', techStack: ['Python', 'TensorFlow', 'FastAPI'], githubUrl: '#', avatar: null, createdAt: '2024-02-01' },
-  { _id: '3', name: 'Rohit Verma', role: 'member', email: 'rohit@example.com', techStack: ['Flutter', 'Firebase', 'Dart'], githubUrl: '#', avatar: null, createdAt: '2024-02-20' },
-  { _id: '4', name: 'Sneha Patel', role: 'member', email: 'sneha@example.com', techStack: ['Vue.js', 'TypeScript', 'PostgreSQL'], githubUrl: '#', avatar: null, createdAt: '2024-03-05' },
-  { _id: '5', name: 'Dev Kapoor', role: 'member', email: 'dev@example.com', techStack: ['Go', 'Docker', 'Kubernetes'], githubUrl: '#', avatar: null, createdAt: '2024-03-12' },
-  { _id: '6', name: 'Ananya Singh', role: 'member', email: 'ananya@example.com', techStack: ['React', 'GraphQL', 'AWS'], githubUrl: '#', avatar: null, createdAt: '2024-03-20' },
-  { _id: '7', name: 'Karan Joshi', role: 'member', email: 'karan@example.com', techStack: ['Angular', 'Java', 'Spring Boot'], githubUrl: '#', avatar: null, createdAt: '2024-04-01' },
-  { _id: '8', name: 'Meera Iyer', role: 'member', email: 'meera@example.com', techStack: ['Swift', 'iOS', 'Firebase'], githubUrl: '#', avatar: null, createdAt: '2024-04-15' },
-  { _id: '9', name: 'Vijay Kumar', role: 'member', email: 'vijay@example.com', techStack: ['Rust', 'WebAssembly', 'C++'], githubUrl: '#', avatar: null, createdAt: '2024-05-01' },
-];
+// Removed static members to avoid preloader flicker
 
 const AVATAR_GRADIENTS = [
   ['#7c3aed', '#06b6d4'], ['#ec4899', '#f59e0b'],
@@ -99,6 +90,15 @@ const MemberCard = ({ member, index }) => {
       <div>
         <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.15rem' }}>{member.name}</div>
         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{member.email}</div>
+        {(member.mobile || member.usn || member.course || member.batch) && (
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--color-text-secondary)', background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+             {member.mobile && <div>📞 {member.mobile}</div>}
+             {member.usn && <div>🎓 {member.usn.toUpperCase()}</div>}
+             {(member.course || member.batch) && (
+                <div>📚 {member.course} {member.batch && `(${member.batch})`}</div>
+             )}
+           </div>
+        )}
       </div>
 
       {/* Tech Stack */}
@@ -142,6 +142,16 @@ const MemberCard = ({ member, index }) => {
             <RiLinkedinBoxFill size={15} />
           </a>
         )}
+        {member.leetcodeUrl && (
+          <a href={member.leetcodeUrl} target="_blank" rel="noreferrer" style={{
+            width: '32px', height: '32px', borderRadius: '8px',
+            background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fbbf24', textDecoration: 'none',
+          }}>
+            <RiCodeSSlashLine size={15} />
+          </a>
+        )}
       </div>
 
       {/* Member since */}
@@ -154,7 +164,8 @@ const MemberCard = ({ member, index }) => {
 
 // ── Team Directory Page ────────────────────────────────────────────────────
 const TeamDirectoryPage = () => {
-  const [members, setMembers] = useState(STATIC_MEMBERS);
+  const { isAdmin } = useAuth();
+  const [members, setMembers] = useState([]);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -173,13 +184,17 @@ const TeamDirectoryPage = () => {
     return matchesRole && matchesSearch;
   });
 
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <div style={{ maxWidth: '1100px' }}>
       {/* Page Header */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '0.25rem' }}>Team Directory</h1>
+        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '0.25rem' }}>Total Participants</h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-          {members.length} members building the future, together.
+          {loading ? 'Loading...' : `${members.length} participants building the future, together.`}
         </p>
       </motion.div>
 
@@ -251,7 +266,15 @@ const TeamDirectoryPage = () => {
 
       {/* Member Grid */}
       <AnimatePresence mode="popLayout">
-        {filtered.length > 0 ? (
+        {loading ? (
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-muted)' }}
+          >
+            <div style={{ fontWeight: 600 }}>Loading participants...</div>
+          </motion.div>
+        ) : filtered.length > 0 ? (
           <motion.div
             key="grid"
             style={{
@@ -271,7 +294,7 @@ const TeamDirectoryPage = () => {
             style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-muted)' }}
           >
             <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
-            <div style={{ fontWeight: 600 }}>No members found</div>
+            <div style={{ fontWeight: 600 }}>No participants found</div>
             <div style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>Try a different search or filter</div>
           </motion.div>
         )}

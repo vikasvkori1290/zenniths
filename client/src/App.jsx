@@ -11,6 +11,7 @@ import EventsPage from './pages/EventsPage';
 import ChallengesPage from './pages/ChallengesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import AdminPanelPage from './pages/AdminPanelPage';
+import DebugBoundary from './components/DebugBoundary';
 
 function App() {
   return (
@@ -27,9 +28,9 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/team" element={<TeamDirectoryPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/events" element={<EventsPage />} />
-                <Route path="/challenges" element={<ChallengesPage />} />
-                <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/events" element={<DebugBoundary><EventsPage /></DebugBoundary>} />
+                <Route path="/challenges" element={<DebugBoundary><ChallengesPage /></DebugBoundary>} />
+                <Route path="/leaderboard" element={<DebugBoundary><LeaderboardPage /></DebugBoundary>} />
               </Route>
             </Route>
 

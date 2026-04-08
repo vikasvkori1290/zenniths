@@ -4,7 +4,7 @@ const Footer = () => (
   <footer style={{
     borderTop: '1px solid var(--color-border)',
     padding: '3rem 1.5rem 2rem',
-    background: 'rgba(10, 10, 15, 0.6)',
+    background: 'var(--color-bg-secondary)',
   }}>
     <div style={{
       maxWidth: '1200px', margin: '0 auto',
@@ -13,14 +13,7 @@ const Footer = () => (
     }}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <div style={{
-          width: '32px', height: '32px', borderRadius: '8px',
-          background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <RiCodeSSlashLine size={18} color="#fff" />
-        </div>
-        <span className="gradient-text" style={{ fontWeight: 800, fontSize: '1.1rem' }}>Club Hub</span>
+        <img src="/logo.png" alt="ClubFlow Logo" style={{ height: '32px', objectFit: 'contain' }} />
       </div>
 
       <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', maxWidth: '360px', lineHeight: 1.6 }}>
@@ -52,7 +45,7 @@ const Footer = () => (
       </div>
 
       <p style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
-        © {new Date().getFullYear()} Club Hub. Built with ❤️ by the Tech Team.
+        © {new Date().getFullYear()} ClubFlow. Built with ❤️ by the Tech Team.
       </p>
     </div>
   </footer>

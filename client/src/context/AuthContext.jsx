@@ -31,8 +31,8 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   }, []);
 
-  const register = useCallback(async (name, email, password) => {
-    const { data } = await api.post('/auth/register', { name, email, password });
+  const register = useCallback(async (name, email, password, mobile) => {
+    const { data } = await api.post('/auth/register', { name, email, password, mobile });
     localStorage.setItem('accessToken', data.accessToken);
     setUser(data.user);
     return data.user;

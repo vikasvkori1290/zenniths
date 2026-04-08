@@ -18,11 +18,11 @@ const attachRefreshToken = (res, token) => {
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
 const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, mobile } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !mobile) {
       res.status(400);
-      return next(new Error('Please provide name, email and password'));
+      return next(new Error('Please provide name, email, mobile and password'));
     }
 
     const userExists = await User.findOne({ email });
@@ -31,7 +31,7 @@ const registerUser = async (req, res, next) => {
       return next(new Error('An account with this email already exists'));
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password, mobile });
 
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id);
@@ -47,6 +47,7 @@ const registerUser = async (req, res, next) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        mobile: user.mobile,
         role: user.role,
         avatar: user.avatar,
         techStack: user.techStack,
@@ -89,6 +90,7 @@ const loginUser = async (req, res, next) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        mobile: user.mobile,
         role: user.role,
         avatar: user.avatar,
         techStack: user.techStack,

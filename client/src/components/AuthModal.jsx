@@ -13,12 +13,12 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
   const [error, setError] = useState('');
   const overlayRef = useRef(null);
 
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', mobile: '' });
 
   useEffect(() => {
     setTab(initialTab);
     setError('');
-    setForm({ name: '', email: '', password: '' });
+    setForm({ name: '', email: '', password: '', mobile: '' });
   }, [initialTab, isOpen]);
 
   // Close on Escape
@@ -48,7 +48,8 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
         navigate(user.role === 'admin' ? '/admin' : '/dashboard');
       } else {
         if (!form.name.trim()) { setError('Name is required'); setLoading(false); return; }
-        const user = await register(form.name, form.email, form.password);
+        if (!form.mobile.trim()) { setError('Mobile number is required'); setLoading(false); return; }
+        const user = await register(form.name, form.email, form.password, form.mobile);
         onClose();
         navigate('/dashboard');
       }
@@ -71,7 +72,7 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
         exit={{ opacity: 0 }}
         style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(0, 0, 0, 0.75)',
+          background: 'rgba(0, 0, 0, 0.6)',
           backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '1rem',
@@ -84,13 +85,13 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           style={{
             width: '100%', maxWidth: '420px',
-            background: 'rgba(17, 17, 27, 0.92)',
+            background: 'var(--color-bg-card)',
             backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(124, 58, 237, 0.25)',
+            border: '1px solid var(--color-border)',
             borderRadius: '20px',
             padding: '2rem',
             position: 'relative',
-            boxShadow: '0 0 60px rgba(124, 58, 237, 0.2), 0 25px 50px rgba(0,0,0,0.5)',
+            boxShadow: 'var(--shadow-glow)',
           }}
         >
           {/* Close Button */}
@@ -139,7 +140,7 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                   fontWeight: 600, fontSize: '0.875rem',
                   transition: 'all 0.25s',
                   background: tab === t
-                    ? 'linear-gradient(135deg, #7c3aed, #06b6d4)'
+                    ? 'linear-gradient(135deg, var(--color-accent-gradient-start), var(--color-accent-gradient-end))'
                     : 'transparent',
                   color: tab === t ? '#fff' : 'var(--color-text-secondary)',
                 }}
@@ -160,7 +161,7 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                 style={{
                   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   gap: '0.5rem', padding: '0.65rem',
-                  background: 'rgba(255,255,255,0.04)',
+                  background: 'var(--color-bg-secondary)',
                   border: '1px solid var(--color-border)',
                   borderRadius: '10px', cursor: 'pointer',
                   color, fontWeight: 600, fontSize: '0.875rem',
@@ -216,7 +217,31 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                   required
                   style={{
                     width: '100%', padding: '0.7rem 0.875rem',
-                    background: 'rgba(255,255,255,0.04)',
+                    background: 'var(--color-bg-secondary)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '10px', color: 'var(--color-text-primary)',
+                    fontSize: '0.9rem', outline: 'none',
+                    transition: 'border-color 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderColor = 'var(--color-accent-primary)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
+                />
+              </div>
+            )}
+            
+            {tab === 'signup' && (
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
+                  Mobile Number
+                </label>
+                <input
+                  name="mobile" type="tel" value={form.mobile}
+                  onChange={handleChange} placeholder="+1234567890"
+                  required
+                  style={{
+                    width: '100%', padding: '0.7rem 0.875rem',
+                    background: 'var(--color-bg-secondary)',
                     border: '1px solid var(--color-border)',
                     borderRadius: '10px', color: 'var(--color-text-primary)',
                     fontSize: '0.9rem', outline: 'none',
@@ -239,7 +264,7 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                 required
                 style={{
                   width: '100%', padding: '0.7rem 0.875rem',
-                  background: 'rgba(255,255,255,0.04)',
+                  background: 'var(--color-bg-secondary)',
                   border: '1px solid var(--color-border)',
                   borderRadius: '10px', color: 'var(--color-text-primary)',
                   fontSize: '0.9rem', outline: 'none',
@@ -263,7 +288,7 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                   required minLength={6}
                   style={{
                     width: '100%', padding: '0.7rem 2.8rem 0.7rem 0.875rem',
-                    background: 'rgba(255,255,255,0.04)',
+                    background: 'var(--color-bg-secondary)',
                     border: '1px solid var(--color-border)',
                     borderRadius: '10px', color: 'var(--color-text-primary)',
                     fontSize: '0.9rem', outline: 'none',
@@ -296,7 +321,7 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
               whileTap={{ scale: loading ? 1 : 0.98 }}
               style={{
                 width: '100%', padding: '0.8rem',
-                background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
+                background: 'linear-gradient(135deg, var(--color-accent-gradient-start), var(--color-accent-gradient-end))',
                 border: 'none', borderRadius: '10px',
                 color: '#fff', fontWeight: 700, fontSize: '0.95rem',
                 cursor: loading ? 'not-allowed' : 'pointer',

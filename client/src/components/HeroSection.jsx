@@ -77,7 +77,7 @@ const HeroSection = ({ onOpenAuth }) => {
             letterSpacing: '0.05em',
           }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#06b6d4', display: 'inline-block' }} />
-            College Technical Club Platform
+            University Technical Club Platform
           </span>
         </motion.div>
 

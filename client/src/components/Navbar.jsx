@@ -22,46 +22,69 @@ const Navbar = ({ onOpenAuth }) => {
 
   return (
     <motion.nav
-      initial={{ y: -80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
+      initial={{ y: -80, opacity: 0, paddingTop: '0rem', paddingBottom: '0rem', paddingLeft: '0rem', paddingRight: '0rem' }}
+      animate={{
+        y: 0,
+        opacity: 1,
+        paddingTop: scrolled ? '0.75rem' : '0rem',
+        paddingBottom: scrolled ? '0.75rem' : '0rem',
+        paddingLeft: scrolled ? '1.5rem' : '0rem',
+        paddingRight: scrolled ? '1.5rem' : '0rem',
+      }}
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 100,
-        transition: 'all 0.3s ease',
-        background: scrolled
-          ? 'rgba(10, 10, 15, 0.85)'
-          : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(124, 58, 237, 0.15)' : 'none',
+        display: 'flex',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+        background: 'transparent',
       }}
     >
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 1.5rem',
-        height: '68px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
+      <motion.div
+        animate={{
+          borderRadius: scrolled ? '100px' : '0px',
+          maxWidth: scrolled ? '860px' : '1200px',
+          background: scrolled ? 'rgba(255,255,255,0.95)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(16px)' : 'blur(0px)',
+          boxShadow: scrolled
+            ? '0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)'
+            : 'none',
+          border: scrolled ? '1px solid rgba(0,0,0,0.07)' : '1px solid transparent',
+        }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+        style={{
+          width: '100%',
+          pointerEvents: 'all',
+          overflow: 'hidden',
+        }}
+      >
+      <motion.div
+        animate={{
+          maxWidth: scrolled ? '860px' : '1200px',
+          paddingLeft: scrolled ? '1.75rem' : '1.5rem',
+          paddingRight: scrolled ? '1.75rem' : '1.5rem',
+          height: scrolled ? '58px' : '68px',
+        }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+        style={{
+          width: '100%',
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          overflow: 'hidden',
+        }}
+      >
         {/* Logo */}
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-          <div style={{
-            width: '36px', height: '36px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <RiCodeSSlashLine size={20} color="#fff" />
-          </div>
-          <span className="gradient-text" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
-            Club Hub
-          </span>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
+          <img src="/logo.png" alt="ClubFlow Logo" style={{ height: '44px', objectFit: 'contain' }} />
+          <span className="gradient-text" style={{ fontSize: '1.25rem', fontWeight: 800 }}>ClubFlow</span>
         </a>
+
 
         {/* Desktop Nav */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }} className="desktop-nav">
@@ -147,7 +170,8 @@ const Navbar = ({ onOpenAuth }) => {
             {mobileOpen ? <RiCloseLine size={24} /> : <RiMenuLine size={24} />}
           </button>
         </div>
-      </div>
+      </motion.div>
+      </motion.div>
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -157,7 +181,7 @@ const Navbar = ({ onOpenAuth }) => {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             style={{
-              background: 'rgba(10, 10, 15, 0.97)',
+              background: 'var(--color-bg-card)',
               borderTop: '1px solid var(--color-border)',
               overflow: 'hidden',
             }}

@@ -2,26 +2,26 @@
 
 @layer base {
   :root {
-    --color-bg-primary: #0a0a0f;
-    --color-bg-secondary: #11111b;
-    --color-bg-card: #1a1a2e;
-    --color-bg-glass: rgba(255, 255, 255, 0.04);
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f4f4f9;
+    --color-bg-card: #ffffff;
+    --color-bg-glass: rgba(255, 255, 255, 0.8);
 
-    --color-accent-primary: #7c3aed;
-    --color-accent-secondary: #06b6d4;
-    --color-accent-gradient-start: #7c3aed;
-    --color-accent-gradient-end: #06b6d4;
+    --color-accent-primary: #2563eb;
+    --color-accent-secondary: #eab308;
+    --color-accent-gradient-start: #1d4ed8;
+    --color-accent-gradient-end: #3b82f6;
 
-    --color-text-primary: #f0f0f8;
-    --color-text-secondary: #a0a0c0;
-    --color-text-muted: #5a5a7a;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #475569;
+    --color-text-muted: #94a3b8;
 
-    --color-border: rgba(124, 58, 237, 0.2);
-    --color-border-hover: rgba(124, 58, 237, 0.5);
+    --color-border: rgba(37, 99, 235, 0.15);
+    --color-border-hover: rgba(37, 99, 235, 0.4);
 
     --radius-card: 16px;
     --radius-btn: 10px;
-    --shadow-glow: 0 0 30px rgba(124, 58, 237, 0.25);
+    --shadow-glow: 0 10px 30px rgba(37, 99, 235, 0.15);
   }
 
   * {
@@ -32,6 +32,7 @@
 
   html {
     scroll-behavior: smooth;
+    font-size: 90%;
   }
 
   body {
@@ -57,7 +58,7 @@
 
   /* Selection */
   ::selection {
-    background: rgba(124, 58, 237, 0.35);
+    background: rgba(37, 99, 235, 0.35);
     color: #fff;
   }
 }

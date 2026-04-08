@@ -30,10 +30,49 @@ const eventSchema = new mongoose.Schema(
       type: String, // Cloudinary URL
       default: null,
     },
+    facultyIncharge: [
+      {
+        name: { type: String, required: true },
+        number: { type: String },
+      }
+    ],
+    studentIncharge: [
+      {
+        name: { type: String, required: true },
+        number: { type: String },
+      }
+    ],
     registeredUsers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
+      },
+    ],
+    minTeam: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    maxTeam: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    teams: [
+      {
+        teamName: { type: String, required: true },
+        leader: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        members: [
+          {
+            name: { type: String, required: true },
+            email: { type: String, required: true },
+            mobile: { type: String },
+            usn: { type: String },
+            course: { type: String },
+            batch: { type: String },
+          },
+        ],
+        registeredAt: { type: Date, default: Date.now },
       },
     ],
     createdBy: {

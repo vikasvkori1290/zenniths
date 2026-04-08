@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { icon: <RiDashboardLine size={20} />, label: 'Dashboard', to: '/dashboard' },
-  { icon: <RiTeamLine size={20} />, label: 'Team', to: '/team' },
+  { icon: <RiTeamLine size={20} />, label: 'Participants', to: '/team' },
   { icon: <RiFolderLine size={20} />, label: 'Projects', to: '/projects' },
   { icon: <RiCalendarEventLine size={20} />, label: 'Events', to: '/events' },
   { icon: <RiFlashlightLine size={20} />, label: 'Challenges', to: '/challenges' },
@@ -48,30 +48,24 @@ const Sidebar = ({ collapsed, onToggle }) => {
         justifyContent: collapsed ? 'center' : 'flex-start',
         minHeight: '68px',
       }}>
-        <div style={{
-          width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-          background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <RiCodeSSlashLine size={20} color="#fff" />
-        </div>
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.span
-              initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              className="gradient-text"
-              style={{ fontWeight: 800, fontSize: '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden' }}
-            >
-              Club Hub
-            </motion.span>
-          )}
-        </AnimatePresence>
+        <img
+          src="/logo.png"
+          alt="ClubFlow Logo"
+          style={{
+            height: '36px',
+            maxWidth: collapsed ? '36px' : '130px',
+            objectFit: 'contain',
+            transition: 'max-width 0.25s',
+          }}
+        />
       </div>
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: '0.75rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', overflowY: 'auto' }}>
-        {NAV_ITEMS.map(({ icon, label, to }) => (
+        {NAV_ITEMS.filter(item => {
+          if (item.label === 'Participants' && !isAdmin) return false;
+          return true;
+        }).map(({ icon, label, to }) => (
           <NavLink
             key={to} to={to}
             style={({ isActive }) => ({

@@ -6,6 +6,7 @@ const {
   updateProfile,
   updateUserRole,
   deleteUser,
+  deleteMe,
 } = require('../controllers/userController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
@@ -13,6 +14,7 @@ const { protect, adminOnly } = require('../middleware/authMiddleware');
 router.get('/', protect, getAllUsers);
 router.get('/:id', protect, getUserById);
 router.put('/profile', protect, updateProfile);
+router.delete('/me', protect, deleteMe);
 
 // Admin-only routes
 router.patch('/:id/role', protect, adminOnly, updateUserRole);
