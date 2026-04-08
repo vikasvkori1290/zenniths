@@ -59,6 +59,17 @@ const eventSchema = new mongoose.Schema(
       default: 1,
       min: 1,
     },
+    volunteersNeeded: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    volunteers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     attendedEmails: [
       {
         type: String,

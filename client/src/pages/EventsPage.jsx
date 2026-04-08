@@ -97,11 +97,15 @@ const TeamRosterCard = ({ team }) => {
   );
 };
 
-const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, currentUserId, isAdmin, onOpenRoster, onPosterClick, user, onShowAlert }) => {
-  const isRegistered = event.registeredUsers?.includes(currentUserId);
-  const hasTeamRegistered = event.teams?.some(t => (t.leader?._id || t.leader) === currentUserId);
+const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, currentUserId, isAdmin, onOpenRoster, onPosterClick, user, onShowAlert, onVolunteer }) => {
+  const isRegistered = event.registeredUsers?.some(id => (id?._id || id)?.toString() === currentUserId?.toString());
+  const hasTeamRegistered = event.teams?.some(t => ((t.leader?._id || t.leader)?.toString() === currentUserId?.toString()) || t.members?.some(m => m.email === user?.email));
+  const isVolunteered = event.volunteers?.some(id => (id?._id || id)?.toString() === currentUserId?.toString());
+  const volunteersLeft = event.volunteersNeeded > 0 ? event.volunteersNeeded - (event.volunteers?.length || 0) : null;
   const [loading, setLoading] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
+  const [hoverReg, setHoverReg] = useState(false);
+  const [hoverVol, setHoverVol] = useState(false);
   const isTeamEvent = (event.minTeam > 1 || event.maxTeam > 1);
 
   // Team form state
@@ -134,6 +138,16 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
     setLoading(true);
     await onToggleRegister(event._id);
     setLoading(false);
+  };
+
+  const handleVolunteer = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await onVolunteer(event._id);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTeamSubmit = async (e) => {
@@ -169,273 +183,309 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
 
   return (
     <>
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.3 }}
-      style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: '20px',
-        overflow: 'hidden', display: 'flex', flexDirection: 'column',
-      }}
-    >
-      {/* Poster Image */}
-      <div style={{ height: '220px', background: 'var(--color-bg-secondary)', position: 'relative' }}>
-        {event.poster ? (
-          <img src={event.poster} alt={event.title} onClick={() => onPosterClick && onPosterClick(event.poster)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} />
-        ) : (
-          <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #1e1b4b, #312e81)' }}>
-            <RiCalendarEventLine size={64} style={{ opacity: 0.2 }} />
-          </div>
-        )}
-        <div style={{
-          position: 'absolute', top: '1rem', left: '1rem', display: 'flex', gap: '0.5rem'
-        }}>
-          <span style={{
-            background: 'var(--color-bg-card)', padding: '0.25rem 0.75rem', borderRadius: '100px',
-            fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent-primary)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-          }}>
-            {event.category}
-          </span>
-          {!isUpcoming && (
-            <span style={{
-              background: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '100px',
-              fontSize: '0.75rem', fontWeight: 700, color: '#fff',
-              boxShadow: '0 4px 12px rgba(239,68,68,0.5)'
-            }}>
-              ENDED
-            </span>
+      <motion.div
+        layout
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.3 }}
+        style={{
+          background: 'var(--color-bg-card)',
+          border: '1px solid var(--color-border)',
+          borderRadius: '20px',
+          overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        }}
+      >
+        {/* Poster Image */}
+        <div style={{ height: '220px', background: 'var(--color-bg-secondary)', position: 'relative' }}>
+          {event.poster ? (
+            <img src={event.poster} alt={event.title} onClick={() => onPosterClick && onPosterClick(event.poster)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} />
+          ) : (
+            <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #1e1b4b, #312e81)' }}>
+              <RiCalendarEventLine size={64} style={{ opacity: 0.2 }} />
+            </div>
           )}
-        </div>
-        <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const url = `${window.location.origin}/events?id=${event._id}`;
-              navigator.clipboard.writeText(url);
-              onShowAlert({ title: "Link Copied!", message: "The event link has been copied to your clipboard. Share it with your friends!", type: "success" });
-            }}
-            style={{
-              width: '34px', height: '34px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
-              border: 'none', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#3b82f6',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-              transition: 'transform 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-            title="Share Link"
-          >
-            <RiShareForwardLine size={16} />
-          </button>
-          
-          {isAdmin && (
-            <>
+          <div style={{
+            position: 'absolute', top: '1rem', left: '1rem', display: 'flex', gap: '0.5rem'
+          }}>
+            <span style={{
+              background: 'var(--color-bg-card)', padding: '0.25rem 0.75rem', borderRadius: '100px',
+              fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent-primary)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+            }}>
+              {event.category}
+            </span>
+            {!isUpcoming && (
+              <span style={{
+                background: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '100px',
+                fontSize: '0.75rem', fontWeight: 700, color: '#fff',
+                boxShadow: '0 4px 12px rgba(239,68,68,0.5)'
+              }}>
+                ENDED
+              </span>
+            )}
+          </div>
+          <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <button
-              onClick={() => onEdit(event)}
+              onClick={(e) => {
+                e.stopPropagation();
+                const url = `${window.location.origin}/events?id=${event._id}`;
+                navigator.clipboard.writeText(url);
+                onShowAlert({ title: "Link Copied!", message: "The event link has been copied to your clipboard. Share it with your friends!", type: "success" });
+              }}
               style={{
                 width: '34px', height: '34px', borderRadius: '50%',
                 background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
                 border: 'none', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#1e1b4b',
+                color: '#3b82f6',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                 transition: 'transform 0.2s',
               }}
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              title="Edit Event"
+              title="Share Link"
             >
-              <RiEdit2Line size={16} />
+              <RiShareForwardLine size={16} />
             </button>
-            <button
-              onClick={() => onDelete(event._id)}
-              style={{
-                width: '34px', height: '34px', borderRadius: '50%',
-                background: 'rgba(239,68,68,0.9)', backdropFilter: 'blur(8px)',
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              title="Delete Event"
-            >
-              <RiDeleteBinLine size={16} />
-            </button>
-            </>
+
+            {isAdmin && (
+              <>
+                <button
+                  onClick={() => onEdit(event)}
+                  style={{
+                    width: '34px', height: '34px', borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
+                    border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#1e1b4b',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    transition: 'transform 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  title="Edit Event"
+                >
+                  <RiEdit2Line size={16} />
+                </button>
+                <button
+                  onClick={() => onDelete(event._id)}
+                  style={{
+                    width: '34px', height: '34px', borderRadius: '50%',
+                    background: 'rgba(239,68,68,0.9)', backdropFilter: 'blur(8px)',
+                    border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    transition: 'transform 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  title="Delete Event"
+                >
+                  <RiDeleteBinLine size={16} />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>{event.title}</h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+              <RiCalendarEventLine size={16} color="var(--color-accent-primary)" />
+              {eventDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+              <RiTimeLine size={16} color="var(--color-accent-secondary)" />
+              {eventDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+              {isUpcoming && (
+                <span style={{ marginLeft: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(6,182,212,0.08)', padding: '0.1rem 0.6rem', borderRadius: '100px', border: '1px solid rgba(6,182,212,0.2)' }}>
+                  ⏱ <CountdownTimer targetDate={event.date} />
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+              <RiMapPinLine size={16} color="#ef4444" />
+              {event.location}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+              <RiTeamLine size={16} color="#7c3aed" />
+              {(event.minTeam === 1 && event.maxTeam === 1) ? '🏆 Solo' : `👥 Team (${event.minTeam || 1}–${event.maxTeam || 1} members)`}
+            </div>
+          </div>
+
+          {(event.facultyIncharge?.length > 0 || event.studentIncharge?.length > 0) && (
+            <div style={{ marginBottom: '1.5rem', background: 'var(--color-bg-secondary)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+              {event.facultyIncharge?.length > 0 && (
+                <div style={{ marginBottom: event.studentIncharge?.length > 0 ? '0.75rem' : 0 }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faculty Incharge</span>
+                  {event.facultyIncharge.map((f, i) => (
+                    <div key={i} style={{ fontSize: '0.85rem' }}>👨‍🏫 {f.name} {f.number && <span style={{ color: 'var(--color-text-muted)' }}>• {f.number}</span>}</div>
+                  ))}
+                </div>
+              )}
+              {event.studentIncharge?.length > 0 && (
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student Incharge</span>
+                  {event.studentIncharge.map((s, i) => (
+                    <div key={i} style={{ fontSize: '0.85rem' }}>🧑‍🎓 {s.name} {s.number && <span style={{ color: 'var(--color-text-muted)' }}>• {s.number}</span>}</div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
-        </div>
-      </div>
 
-      {/* Content */}
-      <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>{event.title}</h3>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            <RiCalendarEventLine size={16} color="var(--color-accent-primary)" />
-            {eventDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            <RiTimeLine size={16} color="var(--color-accent-secondary)" />
-            {eventDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-            {isUpcoming && (
-              <span style={{ marginLeft: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(6,182,212,0.08)', padding: '0.1rem 0.6rem', borderRadius: '100px', border: '1px solid rgba(6,182,212,0.2)' }}>
-                ⏱ <CountdownTimer targetDate={event.date} />
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            <RiMapPinLine size={16} color="#ef4444" />
-            {event.location}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            <RiTeamLine size={16} color="#7c3aed" />
-            {(event.minTeam === 1 && event.maxTeam === 1) ? '🏆 Solo' : `👥 Team (${event.minTeam || 1}–${event.maxTeam || 1} members)`}
-          </div>
-        </div>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, flex: 1, marginBottom: '1.5rem' }}>
+            {event.description}
+          </p>
 
-        {(event.facultyIncharge?.length > 0 || event.studentIncharge?.length > 0) && (
-          <div style={{ marginBottom: '1.5rem', background: 'var(--color-bg-secondary)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-            {event.facultyIncharge?.length > 0 && (
-              <div style={{ marginBottom: event.studentIncharge?.length > 0 ? '0.75rem' : 0 }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Faculty Incharge</span>
-                {event.facultyIncharge.map((f, i) => (
-                  <div key={i} style={{ fontSize: '0.85rem' }}>👨‍🏫 {f.name} {f.number && <span style={{ color: 'var(--color-text-muted)' }}>• {f.number}</span>}</div>
-                ))}
-              </div>
-            )}
-            {event.studentIncharge?.length > 0 && (
-              <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student Incharge</span>
-                {event.studentIncharge.map((s, i) => (
-                  <div key={i} style={{ fontSize: '0.85rem' }}>🧑‍🎓 {s.name} {s.number && <span style={{ color: 'var(--color-text-muted)' }}>• {s.number}</span>}</div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          {/* Footer actions */}
+          <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, flex: 1, marginBottom: '1.5rem' }}>
-          {event.description}
-        </p>
-
-        {/* Footer actions */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-            <RiTeamLine size={18} />
-            {isTeamEvent ? `${event.teams?.length || 0} Teams` : `${event.registeredUsers?.length || 0} Registered`}
-            {isAdmin && (event.registeredUsers?.length > 0 || event.teams?.length > 0) && (
-              <button onClick={() => onOpenRoster(event._id)} style={{ marginLeft: '0.5rem', padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderRadius: '6px', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', cursor: 'pointer', fontWeight: 700 }}>
-                View Roster
+            {/* Volunteer button — shown only when admin set volunteersNeeded > 0 AND slots remain OR user is already volunteered */}
+            {isUpcoming && event.volunteersNeeded > 0 && (isVolunteered || volunteersLeft > 0) && (
+              <button
+                onClick={handleVolunteer}
+                disabled={loading || (alreadyDone && !isVolunteered)}
+                onMouseEnter={() => setHoverVol(true)}
+                onMouseLeave={() => setHoverVol(false)}
+                title={alreadyDone && !isVolunteered ? 'Unregister as participant first to volunteer' : ''}
+                style={{
+                  width: '100%', padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem',
+                  border: '1px solid', cursor: (alreadyDone && !isVolunteered) ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s',
+                  opacity: (alreadyDone && !isVolunteered) ? 0.45 : 1,
+                  ...(isVolunteered
+                    ? (hoverVol 
+                        ? { background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.4)' } 
+                        : { background: 'rgba(16,185,129,0.1)', color: '#10b981', borderColor: 'rgba(16,185,129,0.3)' })
+                    : { background: 'rgba(245,158,11,0.08)', color: '#b45309', borderColor: 'rgba(245,158,11,0.3)' }
+                  )
+                }}
+              >
+                {isVolunteered ? (hoverVol ? '❌ Cancel Volunteering' : '✅ Registered as Volunteer') : `🙋 Volunteer (${volunteersLeft} slot${volunteersLeft !== 1 ? 's' : ''} left)`}
               </button>
             )}
-          </div>
 
-          {isUpcoming && (
-            <button
-              onClick={handleRegister} disabled={loading}
-              style={{
-                padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s',
-                ...(alreadyDone
-                  ? { background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }
-                  : { background: 'var(--color-accent-primary)', color: '#fff' }
-                )
-              }}
-            >
-              {alreadyDone ? <><RiCheckLine size={18} /> Registered</> : (isTeamEvent ? '👥 Register Team' : 'Register Now')}
-            </button>
-          )}
-        </div>
-      </div>
-    </motion.div>
-
-    {/* Team Registration Modal */}
-    <AnimatePresence>
-      {showTeamModal && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000,
-          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
-        }}>
-          <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} style={{
-            background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '24px',
-            width: '100%', maxWidth: '520px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
-          }}>
-            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--color-border)' }}>
-              <h3 style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '0.25rem' }}>👥 Register Team</h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                {event.title} — Team of {event.minTeam}–{event.maxTeam} members (including you)
-              </p>
-            </div>
-            <form onSubmit={handleTeamSubmit} style={{ padding: '1.5rem 2rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Team Name</label>
-                <input required value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="e.g. Code Crushers"
-                  style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                <RiTeamLine size={18} />
+                {isTeamEvent ? `${event.teams?.length || 0} Teams` : `${event.registeredUsers?.length || 0} Registered`}
+                {isAdmin && (event.registeredUsers?.length > 0 || event.teams?.length > 0) && (
+                  <button onClick={() => onOpenRoster(event._id)} style={{ marginLeft: '0.5rem', padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderRadius: '6px', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', cursor: 'pointer', fontWeight: 700 }}>
+                    View Roster
+                  </button>
+                )}
               </div>
 
-              <div style={{ padding: '0.6rem 0.8rem', background: 'rgba(124,58,237,0.08)', borderRadius: '10px', border: '1px solid rgba(124,58,237,0.2)', fontSize: '0.8rem', color: 'var(--color-accent-primary)', fontWeight: 600 }}>
-                Member 1 (You) — auto-filled from your account
-              </div>
-
-              {teamMembers.map((m, idx) => (
-                <div key={idx} style={{ background: 'var(--color-bg-secondary)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>Member {idx + 2}</span>
-                    {teamMembers.length > extraSlots && (
-                      <button type="button" onClick={() => removeMemberSlot(idx)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}>Remove</button>
-                    )}
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
-                    <input required placeholder="Full Name" value={m.name} onChange={e => updateMember(idx, 'name', e.target.value)}
-                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
-                    <input required type="email" placeholder="Email" value={m.email} onChange={e => updateMember(idx, 'email', e.target.value)}
-                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
-                    <input required placeholder="USN Number" value={m.usn} onChange={e => updateMember(idx, 'usn', e.target.value)}
-                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem' }}>
-                    <input placeholder="Mobile" value={m.mobile} onChange={e => updateMember(idx, 'mobile', e.target.value)}
-                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
-                    <input required placeholder="Course" value={m.course} onChange={e => updateMember(idx, 'course', e.target.value)}
-                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
-                    <input required placeholder="Batch (YYYY-YYYY)" pattern="\d{4}-\d{4}" value={m.batch} onChange={e => updateMember(idx, 'batch', e.target.value)}
-                      style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
-                  </div>
-                </div>
-              ))}
-
-              {teamMembers.length < maxExtra && (
-                <button type="button" onClick={addMemberSlot} style={{
-                  padding: '0.65rem', borderRadius: '10px', border: '1px dashed var(--color-border)', background: 'transparent',
-                  color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-                }}>
-                  + Add Team Member
+              {isUpcoming && (
+                <button
+                  onClick={handleRegister} disabled={loading || isVolunteered}
+                  onMouseEnter={() => setHoverReg(true)}
+                  onMouseLeave={() => setHoverReg(false)}
+                  title={isVolunteered ? 'Cancel volunteering first to register' : ''}
+                  style={{
+                    padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', border: 'none',
+                    cursor: isVolunteered ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s',
+                    opacity: isVolunteered ? 0.45 : 1,
+                    ...(alreadyDone
+                      ? (hoverReg
+                          ? { background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }
+                          : { background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' })
+                      : { background: 'var(--color-accent-primary)', color: '#fff' }
+                    )
+                  }}
+                >
+                  {alreadyDone ? (hoverReg ? <><RiCloseLine size={18} /> Cancel</> : <><RiCheckLine size={18} /> Registered</>) : (isTeamEvent ? '👥 Register Team' : 'Register Now')}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <button type="button" onClick={() => setShowTeamModal(false)} style={{ flex: 1, padding: '0.875rem', borderRadius: '12px', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" disabled={loading} style={{ flex: 1, padding: '0.875rem', borderRadius: '12px', background: 'var(--color-accent-primary)', border: 'none', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>{loading ? 'Registering...' : 'Register Team'}</button>
+      {/* Team Registration Modal */}
+      <AnimatePresence>
+        {showTeamModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+          }}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} style={{
+              background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '24px',
+              width: '100%', maxWidth: '520px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--color-border)' }}>
+                <h3 style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: '0.25rem' }}>👥 Register Team</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                  {event.title} — Team of {event.minTeam}–{event.maxTeam} members (including you)
+                </p>
               </div>
-            </form>
+              <form onSubmit={handleTeamSubmit} style={{ padding: '1.5rem 2rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Team Name</label>
+                  <input required value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="e.g. Code Crushers"
+                    style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)', boxSizing: 'border-box' }} />
+                </div>
+
+                <div style={{ padding: '0.6rem 0.8rem', background: 'rgba(124,58,237,0.08)', borderRadius: '10px', border: '1px solid rgba(124,58,237,0.2)', fontSize: '0.8rem', color: 'var(--color-accent-primary)', fontWeight: 600 }}>
+                  Member 1 (You) — auto-filled from your account
+                </div>
+
+                {teamMembers.map((m, idx) => (
+                  <div key={idx} style={{ background: 'var(--color-bg-secondary)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>Member {idx + 2}</span>
+                      {teamMembers.length > extraSlots && (
+                        <button type="button" onClick={() => removeMemberSlot(idx)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}>Remove</button>
+                      )}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
+                      <input required placeholder="Full Name" value={m.name} onChange={e => updateMember(idx, 'name', e.target.value)}
+                        style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      <input required type="email" placeholder="Email" value={m.email} onChange={e => updateMember(idx, 'email', e.target.value)}
+                        style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
+                      <input required placeholder="USN Number" value={m.usn} onChange={e => updateMember(idx, 'usn', e.target.value)}
+                        style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem' }}>
+                      <input placeholder="Mobile" value={m.mobile} onChange={e => updateMember(idx, 'mobile', e.target.value)}
+                        style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      <input required placeholder="Course" value={m.course} onChange={e => updateMember(idx, 'course', e.target.value)}
+                        style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                      <input required placeholder="Batch (YYYY-YYYY)" pattern="\d{4}-\d{4}" value={m.batch} onChange={e => updateMember(idx, 'batch', e.target.value)}
+                        style={{ width: '100%', minWidth: 0, padding: '0.65rem 0.8rem', background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                ))}
+
+                {teamMembers.length < maxExtra && (
+                  <button type="button" onClick={addMemberSlot} style={{
+                    padding: '0.65rem', borderRadius: '10px', border: '1px dashed var(--color-border)', background: 'transparent',
+                    color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                  }}>
+                    + Add Team Member
+                  </button>
+                )}
+
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                  <button type="button" onClick={() => setShowTeamModal(false)} style={{ flex: 1, padding: '0.875rem', borderRadius: '12px', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                  <button type="submit" disabled={loading} style={{ flex: 1, padding: '0.875rem', borderRadius: '12px', background: 'var(--color-accent-primary)', border: 'none', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>{loading ? 'Registering...' : 'Register Team'}</button>
+                </div>
+              </form>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
     </>
   );
 };
@@ -447,13 +497,14 @@ const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [formData, setFormData] = useState({ title: '', description: '', date: '', location: '', category: 'Workshop', minTeam: 1, maxTeam: 1, facultyIncharge: [], studentIncharge: [] });
+  const [formData, setFormData] = useState({ title: '', description: '', date: '', location: '', category: 'Workshop', minTeam: 1, maxTeam: 1, volunteersNeeded: 0, facultyIncharge: [], studentIncharge: [] });
   const [posterFile, setPosterFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [rosterData, setRosterData] = useState(null);
+  const [rosterView, setRosterView] = useState('attendees');
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [editEvent, setEditEvent] = useState(null);
-  const [editForm, setEditForm] = useState({ title: '', description: '', date: '', location: '', category: 'Workshop', minTeam: 1, maxTeam: 1, facultyIncharge: [], studentIncharge: [] });
+  const [editForm, setEditForm] = useState({ title: '', description: '', date: '', location: '', category: 'Workshop', minTeam: 1, maxTeam: 1, volunteersNeeded: 0, facultyIncharge: [], studentIncharge: [] });
   const [editPosterFile, setEditPosterFile] = useState(null);
 
   // --- Crop & Fullscreen state ---
@@ -484,13 +535,16 @@ const EventsPage = () => {
   const handleToggleRegister = async (eventId) => {
     try {
       const { data } = await api.patch(`/events/${eventId}/register`);
-      if (data.success) {
+      if (data.success && data.event) {
+        setEvents(prev => prev.map(e => e._id === eventId ? data.event : e));
+      } else if (data.success) {
+        const userId = user?.id || user?._id;
         setEvents(prev => prev.map(e => {
           if (e._id === eventId) {
             const isNowRegistered = data.registered;
             const newUsers = isNowRegistered
-              ? [...(e.registeredUsers || []), user.id]
-              : (e.registeredUsers || []).filter(id => id !== user.id);
+              ? [...(e.registeredUsers || []), userId]
+              : (e.registeredUsers || []).filter(id => (id?._id || id)?.toString() !== userId?.toString());
             return { ...e, registeredUsers: newUsers };
           }
           return e;
@@ -498,6 +552,27 @@ const EventsPage = () => {
       }
     } catch (error) {
       console.error('Registration failed', error);
+    }
+  };
+
+  const handleToggleVolunteer = async (eventId) => {
+    try {
+      const { data } = await api.patch(`/events/${eventId}/volunteer`);
+      if (data.success) {
+        const userId = user?.id || user?._id;
+        setEvents(prev => prev.map(e => {
+          if (e._id === eventId) {
+            const newVolunteers = data.volunteered
+              ? [...(e.volunteers || []), userId]
+              : (e.volunteers || []).filter(id => (id?._id || id)?.toString() !== userId?.toString());
+            return { ...e, volunteers: newVolunteers };
+          }
+          return e;
+        }));
+      }
+    } catch (error) {
+      const msg = error?.response?.data?.message || 'Could not update volunteer status.';
+      alert(msg);
     }
   };
 
@@ -518,9 +593,9 @@ const EventsPage = () => {
         setPosterFile(null);
         setPosterPreview(null);
         if (activeTab === 'upcoming') {
-           setEvents(prev => [data.event, ...prev]);
+          setEvents(prev => [data.event, ...prev]);
         } else {
-           setActiveTab('upcoming');
+          setActiveTab('upcoming');
         }
       }
     } catch (err) {
@@ -542,6 +617,7 @@ const EventsPage = () => {
       category: event.category,
       minTeam: event.minTeam || 1,
       maxTeam: event.maxTeam || 1,
+      volunteersNeeded: event.volunteersNeeded || 0,
       facultyIncharge: event.facultyIncharge || [],
       studentIncharge: event.studentIncharge || [],
     });
@@ -591,8 +667,10 @@ const EventsPage = () => {
   const handleRegisterTeam = async (eventId, teamName, members) => {
     try {
       const { data } = await api.post(`/events/${eventId}/register-team`, { teamName, members });
-      if (data.success) {
-        // Refresh events to get updated data
+      if (data.success && data.event) {
+        // Optimistically update local event state to avoid sluggish refetch
+        setEvents(prev => prev.map(e => e._id === eventId ? data.event : e));
+      } else if (data.success) {
         fetchEvents(activeTab);
       }
     } catch (err) {
@@ -607,12 +685,14 @@ const EventsPage = () => {
     try {
       const { data } = await api.get(`/events/${eventId}`);
       if (data.success) {
-         setRosterData({
-           eventTitle: data.event.title,
-           users: data.event.registeredUsers || [],
-           teams: data.event.teams || [],
-           isTeamEvent: (data.event.minTeam > 1 || data.event.maxTeam > 1),
-         });
+        setRosterView('attendees');
+        setRosterData({
+          eventTitle: data.event.title,
+          users: data.event.registeredUsers || [],
+          teams: data.event.teams || [],
+          volunteers: data.event.volunteers || [],
+          isTeamEvent: (data.event.minTeam > 1 || data.event.maxTeam > 1),
+        });
       }
     } catch (err) {
       console.error('Failed to fetch roster', err);
@@ -640,7 +720,7 @@ const EventsPage = () => {
   const handleExportCSV = () => {
     if (!rosterData) return;
     let csvStr = '';
-    
+
     if (rosterData.isTeamEvent && rosterData.teams?.length > 0) {
       csvStr += 'Team Name,Role,Name,Email,Mobile,Course/Branch,Batch,USN,Tech Stack\n';
       rosterData.teams.forEach(team => {
@@ -677,12 +757,12 @@ const EventsPage = () => {
           </p>
         </div>
         {user?.role === 'admin' && (
-          <button 
-             onClick={() => setShowCreateModal(true)}
-             style={{
-               display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', borderRadius: '12px',
-               background: 'linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary))',
-               color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer'
+          <button
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', borderRadius: '12px',
+              background: 'linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary))',
+              color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer'
             }}>
             <RiAddLine size={18} /> Create Event
           </button>
@@ -711,12 +791,12 @@ const EventsPage = () => {
         <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading events...</div>
       ) : (
         <AnimatePresence mode="popLayout">
-           {events.length > 0 ? (
+          {events.length > 0 ? (
             <motion.div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
               {events.map((event) => (
-                <EventCard key={event._id} event={event} onToggleRegister={handleToggleRegister} onDelete={handleDeleteEvent} onRegisterTeam={handleRegisterTeam} onEdit={openEditModal} currentUserId={user?.id || user?._id} isAdmin={user?.role === 'admin'} onOpenRoster={handleOpenRoster} onPosterClick={setFullScreenPoster} user={user} onShowAlert={setAlertData} />
+                <EventCard key={event._id} event={event} onToggleRegister={handleToggleRegister} onDelete={handleDeleteEvent} onRegisterTeam={handleRegisterTeam} onEdit={openEditModal} currentUserId={user?.id || user?._id} isAdmin={user?.role === 'admin'} onOpenRoster={handleOpenRoster} onPosterClick={setFullScreenPoster} user={user} onShowAlert={setAlertData} onVolunteer={handleToggleVolunteer} />
               ))}
-             </motion.div>
+            </motion.div>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{
               textAlign: 'center', padding: '5rem', background: 'var(--color-bg-card)', borderRadius: '20px', border: '1px dashed var(--color-border)'
@@ -733,13 +813,13 @@ const EventsPage = () => {
 
       {/* Quick link to Gallery for past events */}
       {activeTab === 'past' && events.length > 0 && (
-         <div style={{ marginTop: '5rem', textAlign: 'center' }}>
-           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>See the Action</h2>
-           <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>Check out the full media gallery of our past club victories.</p>
-           <a href="/#gallery" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 1.5rem', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-accent-primary)', fontWeight: 700, textDecoration: 'none' }}>
-             Open Media Gallery <RiArrowRightLine />
-           </a>
-         </div>
+        <div style={{ marginTop: '5rem', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>See the Action</h2>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>Check out the full media gallery of our past club victories.</p>
+          <a href="/#gallery" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.8rem 1.5rem', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-accent-primary)', fontWeight: 700, textDecoration: 'none' }}>
+            Open Media Gallery <RiArrowRightLine />
+          </a>
+        </div>
       )}
 
       {/* Create Event Modal */}
@@ -753,7 +833,7 @@ const EventsPage = () => {
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} style={{
               background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '24px',
               width: '100%', maxWidth: '500px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-               boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
             }}>
               <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '800', fontSize: '1.25rem' }}>
                 Create New Event
@@ -776,33 +856,33 @@ const EventsPage = () => {
                   {posterPreview && <div style={{ marginTop: '0.5rem', borderRadius: '10px', overflow: 'hidden', maxHeight: '120px' }}><img src={posterPreview} alt="Preview" style={{ width: '100%', height: '120px', objectFit: 'cover' }} /></div>}
                 </div>
 
-                <input required placeholder="Event Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})}
+                <input required placeholder="Event Title" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })}
                   style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
-                
-                <textarea required placeholder="Description" rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}
+
+                <textarea required placeholder="Description" rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}
                   style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)', resize: 'vertical' }} />
-                
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <input required type="datetime-local" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})}
+                  <input required type="datetime-local" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })}
                     style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
-                  <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}
+                  <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}
                     style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }}>
                     <option>Workshop</option><option>Hackathon</option><option>Seminar</option><option>Talk</option><option>Competition</option><option>Social</option><option>Other</option>
                   </select>
                 </div>
 
-                <input required placeholder="Location (Room 101, Discord, etc)" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})}
+                <input required placeholder="Location (Room 101, Discord, etc)" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })}
                   style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Min Team Members</label>
-                    <input required type="number" min={1} value={formData.minTeam} onChange={e => setFormData({...formData, minTeam: Math.max(1, parseInt(e.target.value) || 1)})}
+                    <input required type="number" min={1} value={formData.minTeam} onChange={e => setFormData({ ...formData, minTeam: Math.max(1, parseInt(e.target.value) || 1) })}
                       style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Max Team Members</label>
-                    <input required type="number" min={1} value={formData.maxTeam} onChange={e => setFormData({...formData, maxTeam: Math.max(1, parseInt(e.target.value) || 1)})}
+                    <input required type="number" min={1} value={formData.maxTeam} onChange={e => setFormData({ ...formData, maxTeam: Math.max(1, parseInt(e.target.value) || 1) })}
                       style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
                   </div>
                 </div>
@@ -813,23 +893,34 @@ const EventsPage = () => {
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-accent-primary)', fontWeight: 600, marginTop: '-0.5rem' }}>👥 Team Competition ({formData.minTeam}–{formData.maxTeam} members)</div>
                 )}
 
+                {/* Volunteers Needed */}
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>🙋 Volunteers Needed</label>
+                  <input
+                    type="number" min={0} placeholder="How many volunteers are required? (0 = none)"
+                    value={formData.volunteersNeeded}
+                    onChange={e => setFormData({ ...formData, volunteersNeeded: Math.max(0, parseInt(e.target.value) || 0) })}
+                    style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }}
+                  />
+                </div>
+
                 {/* Faculty Incharge */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Faculty Incharge</label>
-                    <button type="button" onClick={() => setFormData({...formData, facultyIncharge: [...formData.facultyIncharge, { name: '', number: '' }]})} style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>+ Add Faculty</button>
+                    <button type="button" onClick={() => setFormData({ ...formData, facultyIncharge: [...formData.facultyIncharge, { name: '', number: '' }] })} style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>+ Add Faculty</button>
                   </div>
                   {formData.facultyIncharge.map((fac, i) => (
                     <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <input required placeholder="Name" value={fac.name} onChange={e => {
                         const newFac = [...formData.facultyIncharge]; newFac[i].name = e.target.value;
-                        setFormData({...formData, facultyIncharge: newFac});
+                        setFormData({ ...formData, facultyIncharge: newFac });
                       }} style={{ flex: 1, padding: '0.6rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)' }} />
                       <input placeholder="Phone / Details" value={fac.number} onChange={e => {
                         const newFac = [...formData.facultyIncharge]; newFac[i].number = e.target.value;
-                        setFormData({...formData, facultyIncharge: newFac});
+                        setFormData({ ...formData, facultyIncharge: newFac });
                       }} style={{ flex: 1, padding: '0.6rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)' }} />
-                      <button type="button" onClick={() => setFormData({...formData, facultyIncharge: formData.facultyIncharge.filter((_, idx) => idx !== i)})} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '0 0.8rem', cursor: 'pointer' }}><RiDeleteBinLine /></button>
+                      <button type="button" onClick={() => setFormData({ ...formData, facultyIncharge: formData.facultyIncharge.filter((_, idx) => idx !== i) })} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '0 0.8rem', cursor: 'pointer' }}><RiDeleteBinLine /></button>
                     </div>
                   ))}
                 </div>
@@ -838,19 +929,19 @@ const EventsPage = () => {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Student Incharge</label>
-                    <button type="button" onClick={() => setFormData({...formData, studentIncharge: [...formData.studentIncharge, { name: '', number: '' }]})} style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>+ Add Student</button>
+                    <button type="button" onClick={() => setFormData({ ...formData, studentIncharge: [...formData.studentIncharge, { name: '', number: '' }] })} style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>+ Add Student</button>
                   </div>
                   {formData.studentIncharge.map((stu, i) => (
                     <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <input required placeholder="Name" value={stu.name} onChange={e => {
                         const newStu = [...formData.studentIncharge]; newStu[i].name = e.target.value;
-                        setFormData({...formData, studentIncharge: newStu});
+                        setFormData({ ...formData, studentIncharge: newStu });
                       }} style={{ flex: 1, padding: '0.6rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)' }} />
                       <input placeholder="Phone / Details" value={stu.number} onChange={e => {
                         const newStu = [...formData.studentIncharge]; newStu[i].number = e.target.value;
-                        setFormData({...formData, studentIncharge: newStu});
+                        setFormData({ ...formData, studentIncharge: newStu });
                       }} style={{ flex: 1, padding: '0.6rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)' }} />
-                      <button type="button" onClick={() => setFormData({...formData, studentIncharge: formData.studentIncharge.filter((_, idx) => idx !== i)})} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '0 0.8rem', cursor: 'pointer' }}><RiDeleteBinLine /></button>
+                      <button type="button" onClick={() => setFormData({ ...formData, studentIncharge: formData.studentIncharge.filter((_, idx) => idx !== i) })} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '0 0.8rem', cursor: 'pointer' }}><RiDeleteBinLine /></button>
                     </div>
                   ))}
                 </div>
@@ -904,45 +995,57 @@ const EventsPage = () => {
                   {editPosterPreview && <div style={{ marginTop: '0.5rem', borderRadius: '10px', overflow: 'hidden', maxHeight: '120px' }}><img src={editPosterPreview} alt="Preview" style={{ width: '100%', height: '120px', objectFit: 'cover' }} /></div>}
                 </div>
 
-                <input required placeholder="Event Title" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})}
+                <input required placeholder="Event Title" value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })}
                   style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
-                <textarea required placeholder="Description" rows={3} value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})}
+                <textarea required placeholder="Description" rows={3} value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })}
                   style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)', resize: 'vertical' }} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <input required type="datetime-local" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})}
+                  <input required type="datetime-local" value={editForm.date} onChange={e => setEditForm({ ...editForm, date: e.target.value })}
                     style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
-                  <select value={editForm.category} onChange={e => setEditForm({...editForm, category: e.target.value})}
+                  <select value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })}
                     style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }}>
                     <option>Workshop</option><option>Hackathon</option><option>Seminar</option><option>Talk</option><option>Competition</option><option>Social</option><option>Other</option>
                   </select>
                 </div>
-                <input required placeholder="Location" value={editForm.location} onChange={e => setEditForm({...editForm, location: e.target.value})}
+                <input required placeholder="Location" value={editForm.location} onChange={e => setEditForm({ ...editForm, location: e.target.value })}
                   style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div><label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Min Team</label>
-                  <input type="number" min={1} value={editForm.minTeam} onChange={e => setEditForm({...editForm, minTeam: Math.max(1, parseInt(e.target.value) || 1)})}
-                    style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} /></div>
+                    <input type="number" min={1} value={editForm.minTeam} onChange={e => setEditForm({ ...editForm, minTeam: Math.max(1, parseInt(e.target.value) || 1) })}
+                      style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} /></div>
                   <div><label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Max Team</label>
-                  <input type="number" min={1} value={editForm.maxTeam} onChange={e => setEditForm({...editForm, maxTeam: Math.max(1, parseInt(e.target.value) || 1)})}
-                    style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} /></div>
+                    <input type="number" min={1} value={editForm.maxTeam} onChange={e => setEditForm({ ...editForm, maxTeam: Math.max(1, parseInt(e.target.value) || 1) })}
+                      style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }} /></div>
                 </div>
+
+                {/* Volunteers Needed */}
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>🙋 Volunteers Needed</label>
+                  <input
+                    type="number" min={0} placeholder="How many volunteers are required? (0 = none)"
+                    value={editForm.volunteersNeeded}
+                    onChange={e => setEditForm({ ...editForm, volunteersNeeded: Math.max(0, parseInt(e.target.value) || 0) })}
+                    style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }}
+                  />
+                </div>
+
                 {/* Faculty Incharge */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Faculty Incharge</label>
-                    <button type="button" onClick={() => setEditForm({...editForm, facultyIncharge: [...editForm.facultyIncharge, { name: '', number: '' }]})} style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>+ Add Faculty</button>
+                    <button type="button" onClick={() => setEditForm({ ...editForm, facultyIncharge: [...editForm.facultyIncharge, { name: '', number: '' }] })} style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>+ Add Faculty</button>
                   </div>
                   {editForm.facultyIncharge.map((fac, i) => (
                     <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <input required placeholder="Name" value={fac.name} onChange={e => {
                         const newFac = [...editForm.facultyIncharge]; newFac[i].name = e.target.value;
-                        setEditForm({...editForm, facultyIncharge: newFac});
+                        setEditForm({ ...editForm, facultyIncharge: newFac });
                       }} style={{ flex: 1, padding: '0.6rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)' }} />
                       <input placeholder="Phone / Details" value={fac.number} onChange={e => {
                         const newFac = [...editForm.facultyIncharge]; newFac[i].number = e.target.value;
-                        setEditForm({...editForm, facultyIncharge: newFac});
+                        setEditForm({ ...editForm, facultyIncharge: newFac });
                       }} style={{ flex: 1, padding: '0.6rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)' }} />
-                      <button type="button" onClick={() => setEditForm({...editForm, facultyIncharge: editForm.facultyIncharge.filter((_, idx) => idx !== i)})} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '0 0.8rem', cursor: 'pointer' }}><RiDeleteBinLine /></button>
+                      <button type="button" onClick={() => setEditForm({ ...editForm, facultyIncharge: editForm.facultyIncharge.filter((_, idx) => idx !== i) })} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '0 0.8rem', cursor: 'pointer' }}><RiDeleteBinLine /></button>
                     </div>
                   ))}
                 </div>
@@ -951,19 +1054,19 @@ const EventsPage = () => {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Student Incharge</label>
-                    <button type="button" onClick={() => setEditForm({...editForm, studentIncharge: [...editForm.studentIncharge, { name: '', number: '' }]})} style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>+ Add Student</button>
+                    <button type="button" onClick={() => setEditForm({ ...editForm, studentIncharge: [...editForm.studentIncharge, { name: '', number: '' }] })} style={{ background: 'none', border: 'none', color: 'var(--color-accent-primary)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>+ Add Student</button>
                   </div>
                   {editForm.studentIncharge.map((stu, i) => (
                     <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <input required placeholder="Name" value={stu.name} onChange={e => {
                         const newStu = [...editForm.studentIncharge]; newStu[i].name = e.target.value;
-                        setEditForm({...editForm, studentIncharge: newStu});
+                        setEditForm({ ...editForm, studentIncharge: newStu });
                       }} style={{ flex: 1, padding: '0.6rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)' }} />
                       <input placeholder="Phone / Details" value={stu.number} onChange={e => {
                         const newStu = [...editForm.studentIncharge]; newStu[i].number = e.target.value;
-                        setEditForm({...editForm, studentIncharge: newStu});
+                        setEditForm({ ...editForm, studentIncharge: newStu });
                       }} style={{ flex: 1, padding: '0.6rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text-primary)' }} />
-                      <button type="button" onClick={() => setEditForm({...editForm, studentIncharge: editForm.studentIncharge.filter((_, idx) => idx !== i)})} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '0 0.8rem', cursor: 'pointer' }}><RiDeleteBinLine /></button>
+                      <button type="button" onClick={() => setEditForm({ ...editForm, studentIncharge: editForm.studentIncharge.filter((_, idx) => idx !== i) })} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '0 0.8rem', cursor: 'pointer' }}><RiDeleteBinLine /></button>
                     </div>
                   ))}
                 </div>
@@ -988,58 +1091,96 @@ const EventsPage = () => {
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} style={{
               background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '24px',
               width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-               boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
             }}>
               <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontWeight: '800', fontSize: '1.25rem', marginBottom: '0.2rem' }}>Attendee Roster</h3>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{rosterData.eventTitle} ({rosterData.users.length} registered)</div>
+                  <h3 style={{ fontWeight: '800', fontSize: '1.25rem', marginBottom: '0.2rem' }}>
+                    {rosterView === 'attendees' ? 'Attendee Roster' : 'Volunteer Roster'}
+                  </h3>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                    {rosterData.eventTitle} ({rosterView === 'attendees' ? rosterData.users.length + ' registered' : rosterData.volunteers.length + ' volunteers'})
+                  </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {rosterData.volunteers?.length > 0 && (
+                    <button onClick={() => setRosterView(rosterView === 'attendees' ? 'volunteers' : 'attendees')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: 'var(--color-accent-primary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>
+                      {rosterView === 'attendees' ? 'View Volunteers' : 'View Attendees'}
+                    </button>
+                  )}
                   <button onClick={handleExportCSV} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                     <RiDownloadLine size={16} /> Export to Excel
                   </button>
                   <button onClick={() => setRosterData(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}><RiCloseLine /></button>
                 </div>
               </div>
-              
-              <div style={{ padding: '1.5rem 2rem', overflowY: 'auto' }}>
-                {/* Team event roster */}
-                {rosterData.isTeamEvent && rosterData.teams?.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    {rosterData.teams.map((team, ti) => (
-                      <TeamRosterCard key={ti} team={team} />
-                    ))}
-                  </div>
-                )}
 
-                {/* Solo event roster or fallback */}
-                {(!rosterData.isTeamEvent || !rosterData.teams?.length) && (
+              <div style={{ padding: '1.5rem 2rem', overflowY: 'auto' }}>
+                {rosterView === 'attendees' ? (
                   <>
-                  {rosterData.users.length === 0 && <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>No attendees yet.</div>}
-                  {rosterData.users.map((u, i) => (
-                    <div key={u._id || i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--color-border-hover)' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--color-accent-gradient-start), var(--color-accent-gradient-end))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#fff' }}>
-                        {u.avatar ? <img src={u.avatar} style={{width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%'}} alt="" /> : (u.name || '?').charAt(0).toUpperCase()}
+                    {/* Team event roster */}
+                    {rosterData.isTeamEvent && rosterData.teams?.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {rosterData.teams.map((team, ti) => (
+                          <TeamRosterCard key={ti} team={team} />
+                        ))}
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700 }}>{u.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-                          {u.email} {u.mobile && `• 📞 ${u.mobile}`}
-                          {(u.usn || u.course || u.batch) && (
-                            <div style={{ marginTop: '0.2rem', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
-                              {u.course} {u.batch && `(${u.batch})`} {u.usn && `• USN: ${u.usn.toUpperCase()}`}
+                    )}
+
+                    {/* Solo event roster or fallback */}
+                    {(!rosterData.isTeamEvent || !rosterData.teams?.length) && (
+                      <>
+                        {rosterData.users.length === 0 && <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>No attendees yet.</div>}
+                        {rosterData.users.map((u, i) => (
+                          <div key={u._id || i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--color-border-hover)' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--color-accent-gradient-start), var(--color-accent-gradient-end))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#fff' }}>
+                              {u.avatar ? <img src={u.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="" /> : (u.name || '?').charAt(0).toUpperCase()}
                             </div>
-                          )}
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700 }}>{u.name}</div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+                                {u.email} {u.mobile && `• 📞 ${u.mobile}`}
+                                {(u.usn || u.course || u.batch) && (
+                                  <div style={{ marginTop: '0.2rem', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
+                                    {u.course} {u.batch && `(${u.batch})`} {u.usn && `• USN: ${u.usn.toUpperCase()}`}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {(u.techStack || []).length > 0 && (
+                              <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                {u.techStack.slice(0, 2).map(t => <span key={t} style={{ fontSize: '0.65rem', background: 'var(--color-bg-secondary)', padding: '0.15rem 0.4rem', borderRadius: '4px', color: 'var(--color-text-muted)' }}>{t}</span>)}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {rosterData.volunteers.length === 0 && <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>No volunteers yet.</div>}
+                    {rosterData.volunteers.map((u, i) => (
+                      <div key={u._id || i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--color-border-hover)' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#fff' }}>
+                          {u.avatar ? <img src={u.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="" /> : (u.name || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700 }}>{u.name}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+                            {u.email} {u.mobile && `• 📞 ${u.mobile}`}
+                            {(u.usn || u.course || u.batch) && (
+                              <div style={{ marginTop: '0.2rem', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
+                                {u.course} {u.batch && `(${u.batch})`} {u.usn && `• USN: ${u.usn.toUpperCase()}`}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                           <span style={{ fontSize: '0.65rem', background: 'rgba(16,185,129,0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', color: '#10b981', fontWeight: 600 }}>Volunteer</span>
                         </div>
                       </div>
-                      {(u.techStack || []).length > 0 && (
-                        <div style={{ display: 'flex', gap: '0.3rem' }}>
-                           {u.techStack.slice(0, 2).map(t => <span key={t} style={{ fontSize: '0.65rem', background: 'var(--color-bg-secondary)', padding: '0.15rem 0.4rem', borderRadius: '4px', color:'var(--color-text-muted)' }}>{t}</span>)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
                   </>
                 )}
               </div>
@@ -1059,8 +1200,8 @@ const EventsPage = () => {
             <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)' }}>
               <h3 style={{ fontWeight: 800 }}>Adjust Poster</h3>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                 <button onClick={() => setShowCropperObj(null)} style={{ padding: '0.5rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'inherit', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-                 <button onClick={handleCropSave} style={{ padding: '0.5rem 1rem', background: 'var(--color-accent-primary)', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>Apply</button>
+                <button onClick={() => setShowCropperObj(null)} style={{ padding: '0.5rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'inherit', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
+                <button onClick={handleCropSave} style={{ padding: '0.5rem 1rem', background: 'var(--color-accent-primary)', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>Apply</button>
               </div>
             </div>
             <div style={{ position: 'relative', flex: 1, background: '#111' }}>
@@ -1093,11 +1234,11 @@ const EventsPage = () => {
             }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} >
               <RiCloseLine size={24} />
             </button>
-            <motion.img 
+            <motion.img
               initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-              src={fullScreenPoster} 
-              alt="Fullscreen event poster" 
-              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} 
+              src={fullScreenPoster}
+              alt="Fullscreen event poster"
+              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
             />
           </motion.div>
         )}
@@ -1107,29 +1248,29 @@ const EventsPage = () => {
       <AnimatePresence>
         {alertData && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', padding: '1rem', backdropFilter: 'blur(4px)' }}>
-             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
-               style={{ background: 'var(--color-bg-card)', borderRadius: '24px', border: '1px solid var(--color-border)', padding: '2.5rem 2rem', maxWidth: '420px', width: '100%', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', position: 'relative' }}>
-               
-               <button onClick={() => setAlertData(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}><RiCloseLine size={24} /></button>
-               
-               {alertData.type === 'warning' ? (
-                 <div style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
-                   <RiInformationLine size={32} />
-                 </div>
-               ) : (
-                 <div style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
-                   <RiCheckLine size={32} />
-                 </div>
-               )}
-               
-               <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--color-text-primary)' }}>{alertData.title}</h3>
-               <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>{alertData.message}</p>
-               
-               <button onClick={() => setAlertData(null)} style={{ padding: '0.875rem 2rem', width: '100%', background: alertData.type === 'warning' ? '#ef4444' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', transition: 'transform 0.2s' }}
-                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-                 {alertData.type === 'warning' ? 'Update Profile' : 'Awesome'}
-               </button>
-             </motion.div>
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              style={{ background: 'var(--color-bg-card)', borderRadius: '24px', border: '1px solid var(--color-border)', padding: '2.5rem 2rem', maxWidth: '420px', width: '100%', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', position: 'relative' }}>
+
+              <button onClick={() => setAlertData(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}><RiCloseLine size={24} /></button>
+
+              {alertData.type === 'warning' ? (
+                <div style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+                  <RiInformationLine size={32} />
+                </div>
+              ) : (
+                <div style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+                  <RiCheckLine size={32} />
+                </div>
+              )}
+
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--color-text-primary)' }}>{alertData.title}</h3>
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>{alertData.message}</p>
+
+              <button onClick={() => setAlertData(null)} style={{ padding: '0.875rem 2rem', width: '100%', background: alertData.type === 'warning' ? '#ef4444' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', transition: 'transform 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                {alertData.type === 'warning' ? 'Update Profile' : 'Awesome'}
+              </button>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>

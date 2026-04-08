@@ -8,6 +8,7 @@ const {
   toggleEventRegistration,
   registerTeam,
   deleteEvent,
+  toggleVolunteer,
 } = require('../controllers/eventController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { upload } = require('../utils/cloudinary');
@@ -26,5 +27,8 @@ router.patch('/:id/register', protect, toggleEventRegistration);
 
 // Team registration for team events
 router.post('/:id/register-team', protect, registerTeam);
+
+// Volunteer for an event
+router.patch('/:id/volunteer', protect, toggleVolunteer);
 
 module.exports = router;

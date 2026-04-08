@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { RiCalendarEventLine, RiArrowRightLine, RiTimeLine } from 'react-icons/ri';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
 // Fallback static events for when no backend is connected
@@ -26,10 +28,20 @@ const daysUntil = (dateStr) => {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 };
 
-const EventsStrip = () => {
+const EventsStrip = ({ onOpenAuth }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
   const [events, setEvents] = useState(STATIC_EVENTS);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleNavigate = () => {
+    if (user) {
+      navigate('/events');
+    } else {
+      onOpenAuth && onOpenAuth('login');
+    }
+  };
 
   useEffect(() => {
     api.get('/events?upcoming=true&limit=6')
@@ -53,13 +65,17 @@ const EventsStrip = () => {
               Upcoming <span className="gradient-text">Events</span>
             </h2>
           </div>
-          <a href="#" style={{
-            display: 'flex', alignItems: 'center', gap: '0.35rem',
-            color: 'var(--color-accent-primary)', textDecoration: 'none',
-            fontSize: '0.875rem', fontWeight: 600,
-          }}>
+          <button
+            onClick={handleNavigate}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.35rem',
+              color: 'var(--color-accent-primary)', background: 'none',
+              border: 'none', cursor: 'pointer', padding: 0,
+              fontSize: '0.875rem', fontWeight: 600,
+            }}
+          >
             View all <RiArrowRightLine size={16} />
-          </a>
+          </button>
         </motion.div>
 
         {/* Horizontal scroll strip */}
@@ -92,6 +108,7 @@ const EventsStrip = () => {
                   position: 'relative',
                   overflow: 'hidden',
                 }}
+                onClick={handleNavigate}
               >
                 {/* Color accent top strip */}
                 <div style={{

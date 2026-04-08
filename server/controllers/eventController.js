@@ -29,7 +29,8 @@ const getEventById = async (req, res, next) => {
     const event = await Event.findById(req.params.id)
       .populate('createdBy', 'name avatar')
       .populate('registeredUsers', 'name email mobile avatar techStack usn course batch')
-      .populate('teams.leader', 'name email mobile avatar usn course batch');
+      .populate('teams.leader', 'name email mobile avatar usn course batch')
+      .populate('volunteers', 'name email mobile avatar techStack usn course batch');
 
     if (!event) {
       res.status(404);
@@ -76,18 +77,27 @@ const toggleEventRegistration = async (req, res, next) => {
     }
 
     const userId = req.user.id;
-    const isRegistered = event.registeredUsers.includes(userId);
+    const isRegistered = event.registeredUsers.some(id => id.toString() === userId);
+    const isTeamLeader = event.teams.some(t => t.leader.toString() === userId);
+    const isVolunteer = event.volunteers.some(id => id.toString() === userId);
 
-    if (isRegistered) {
-      // Un-register
+    if (isRegistered || isTeamLeader) {
+      // Un-register (removes both individual registration and any team led by this user)
       event.registeredUsers = event.registeredUsers.filter(id => id.toString() !== userId);
+      event.teams = event.teams.filter(t => t.leader.toString() !== userId);
+      event.markModified('teams');
     } else {
+      if (isVolunteer) {
+        res.status(400);
+        return next(new Error('You are already registered as a volunteer. Cancel volunteering first to register as participant.'));
+      }
       // Register
       event.registeredUsers.push(userId);
     }
 
     await event.save();
-    res.json({ success: true, registered: !isRegistered, totalRegistered: event.registeredUsers.length });
+    await event.populate('createdBy', 'name');
+    res.json({ success: true, registered: (!isRegistered && !isTeamLeader), event, totalRegistered: event.registeredUsers.length });
   } catch (err) {
     next(err);
   }
@@ -122,6 +132,13 @@ const registerTeam = async (req, res, next) => {
       return next(new Error('You have already registered a team for this event'));
     }
 
+    // Check if user is already a volunteer
+    const isVolunteer = event.volunteers.some(id => id.toString() === req.user.id);
+    if (isVolunteer) {
+      res.status(400);
+      return next(new Error('You are already registered as a volunteer. Cancel volunteering first to register a team.'));
+    }
+
     event.teams.push({
       teamName,
       leader: req.user.id,
@@ -134,7 +151,7 @@ const registerTeam = async (req, res, next) => {
     }
 
     await event.save();
-    res.status(201).json({ success: true, message: 'Team registered successfully', totalTeams: event.teams.length });
+    res.status(201).json({ success: true, message: 'Team registered successfully', event, totalTeams: event.teams.length });
   } catch (err) {
     next(err);
   }
@@ -155,7 +172,7 @@ const updateEvent = async (req, res, next) => {
     }
 
     // Update fields from body
-    const allowedFields = ['title', 'description', 'date', 'location', 'category', 'minTeam', 'maxTeam'];
+    const allowedFields = ['title', 'description', 'date', 'location', 'category', 'minTeam', 'maxTeam', 'volunteersNeeded'];
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
         event[field] = req.body[field];
@@ -195,6 +212,47 @@ const deleteEvent = async (req, res, next) => {
   }
 };
 
+// ─── PATCH /api/events/:id/volunteer ─────────────────────────────────────────
+const toggleVolunteer = async (req, res, next) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      res.status(404);
+      return next(new Error('Event not found'));
+    }
+
+    const userId = req.user.id;
+    const isVolunteer = event.volunteers.some(id => id.toString() === userId);
+    const isRegistered = event.registeredUsers.some(id => id.toString() === userId) ||
+      event.teams.some(t => t.leader.toString() === userId);
+
+    if (isVolunteer) {
+      // Un-volunteer
+      event.volunteers = event.volunteers.filter(id => id.toString() !== userId);
+      await event.save();
+      return res.json({ success: true, volunteered: false, totalVolunteers: event.volunteers.length });
+    }
+
+    // Block if already in regular registration
+    if (isRegistered) {
+      res.status(400);
+      return next(new Error('You are already registered as a participant. Unregister first to volunteer.'));
+    }
+
+    // Check capacity
+    if (event.volunteersNeeded > 0 && event.volunteers.length >= event.volunteersNeeded) {
+      res.status(400);
+      return next(new Error('Volunteer slots are full.'));
+    }
+
+    event.volunteers.push(userId);
+    await event.save();
+    res.json({ success: true, volunteered: true, totalVolunteers: event.volunteers.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -203,4 +261,6 @@ module.exports = {
   toggleEventRegistration,
   registerTeam,
   deleteEvent,
+  toggleVolunteer,
 };
+

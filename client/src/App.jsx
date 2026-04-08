@@ -12,6 +12,7 @@ import ChallengesPage from './pages/ChallengesPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import AuthSuccess from './pages/AuthSuccess';
+import GalleryDatabasePage from './pages/GalleryDatabasePage';
 import DebugBoundary from './components/DebugBoundary';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth-success" element={<AuthSuccess />} />
+            <Route path="/gallery" element={<GalleryDatabasePage />} />
 
             {/* Member protected routes — wrapped in SidebarLayout */}
             <Route element={<ProtectedRoute />}>

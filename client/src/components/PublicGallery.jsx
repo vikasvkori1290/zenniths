@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiCloseLine, RiZoomInLine, RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 
 const PublicGallery = () => {
@@ -48,30 +49,57 @@ const PublicGallery = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
-          {images.map((img, index) => (
-            <motion.div
-              key={img._id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ delay: (index % 4) * 0.1, duration: 0.6 }}
-              style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', background: '#f8fafc', border: '1px solid var(--color-border)' }}
-              onClick={() => setLightboxIndex(index)}
-              whileHover={{ y: -5, boxShadow: '0 12px 30px rgba(0,0,0,0.12)' }}
-            >
-              <img src={img.url} alt={img.title} loading="lazy" style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
-              <div
-                style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)', opacity: 0, transition: 'opacity 0.3s ease', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '1.5rem' }}
-                onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                onMouseLeave={e => e.currentTarget.style.opacity = 0}
+        <style>
+          {`
+            @keyframes galleryScroll {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(calc(-50% - 0.75rem)); }
+            }
+            .gallery-carousel-track {
+              display: flex;
+              gap: 1.5rem;
+              width: max-content;
+              animation: galleryScroll 40s linear infinite;
+              padding-bottom: 2rem;
+            }
+            .gallery-carousel-track:hover {
+              animation-play-state: paused;
+            }
+          `}
+        </style>
+
+        <div style={{ overflow: 'hidden', margin: '0 -2rem', padding: '0 2rem' }}>
+          <div className="gallery-carousel-track">
+            {[...images.slice(0,8), ...images.slice(0,8)].map((img, index) => (
+              <motion.div
+                key={`${img._id}-${index}`}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true, margin: '100px' }}
+                transition={{ duration: 0.5 }}
+                style={{ minWidth: '300px', flex: '0 0 auto', position: 'relative', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', background: '#f8fafc', border: '1px solid var(--color-border)' }}
+                onClick={() => setLightboxIndex(index % Math.min(images.length, 8))}
+                whileHover={{ y: -5, boxShadow: '0 12px 30px rgba(0,0,0,0.12)' }}
               >
-                <RiZoomInLine size={24} color="#fff" style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }} />
-                <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>{img.title}</span>
-                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem', marginTop: '0.25rem' }}>{new Date(img.createdAt).toLocaleDateString()}</span>
-              </div>
-            </motion.div>
-          ))}
+                <img src={img.url} alt={img.title} loading="lazy" style={{ width: '100%', height: '220px', display: 'block', objectFit: 'cover' }} />
+                <div
+                  style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)', opacity: 0, transition: 'opacity 0.3s ease', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '1.5rem' }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                  onMouseLeave={e => e.currentTarget.style.opacity = 0}
+                >
+                  <RiZoomInLine size={24} color="#fff" style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }} />
+                  <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>{img.title}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem', marginTop: '0.25rem' }}>{new Date(img.createdAt).toLocaleDateString()}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+          <Link to="/gallery" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '1rem 2rem', background: 'var(--color-bg-primary)', border: '2px solid var(--color-border)', borderRadius: '100px', color: 'var(--color-text-primary)', fontWeight: 800, fontSize: '1rem', textDecoration: 'none', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-accent-primary)'; e.currentTarget.style.color = 'var(--color-accent-primary)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}>
+            View All Memories <RiArrowRightSLine size={20} />
+          </Link>
         </div>
       </div>
 

@@ -23,7 +23,7 @@ const LandingPage = () => {
       <main style={{ flex: 1, paddingTop: '64px' }}>
         <AnnouncementTicker />
         <HeroSection onOpenAuth={openAuth} />
-        <EventsStrip />
+        <EventsStrip onOpenAuth={openAuth} />
         <FeaturedProjectsCarousel />
         <ChallengesPreview />
         <LeaderboardSnippet />

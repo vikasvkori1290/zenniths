@@ -52,8 +52,8 @@ const AdminPanelPage = () => {
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadTitle, setUploadTitle] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
 
   const [announcements, setAnnouncements] = useState([]);
   const [newAnnouncement, setNewAnnouncement] = useState('');
@@ -306,31 +306,42 @@ const AdminPanelPage = () => {
 
   // Gallery Handlers
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedFile(reader.result); // base64 string for Cloudinary
-        setImagePreview(URL.createObjectURL(file));
-      };
-      reader.readAsDataURL(file);
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    if (files.length > 15) {
+      alert('You can only upload up to 15 images at a time.');
+      return;
     }
+
+    const readers = files.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readers).then(base64Strings => {
+      setSelectedFiles(base64Strings);
+      setImagePreviews(files.map(f => URL.createObjectURL(f)));
+    });
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!selectedFile) return;
+    if (!selectedFiles.length) return;
 
     setUploading(true);
     try {
       const { data } = await api.post('/gallery', {
-        image: selectedFile,
+        images: selectedFiles,
         title: uploadTitle || 'Event Memory'
       });
       if (data.success) {
         setUploadTitle('');
-        setSelectedFile(null);
-        setImagePreview(null);
+        setSelectedFiles([]);
+        setImagePreviews([]);
         fetchImages(); // Refresh array
       }
     } catch (err) {
@@ -540,23 +551,25 @@ const AdminPanelPage = () => {
                         style={{ padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)' }}
                     />
                     <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '2rem', border: '2px dashed var(--color-border)', borderRadius: '12px', background: 'var(--color-bg-secondary)', cursor: 'pointer', transition: 'border-color 0.2s' }}>
-                        {imagePreview ? (
-                            <div style={{ width: '100%', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
-                                <img src={imagePreview} alt="Preview" style={{ width: '100%', height: 'auto', objectFit: 'contain', maxHeight: '180px' }} />
-                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s', width: '100%', height: '100%' }} onMouseEnter={e => e.currentTarget.style.opacity=1} onMouseLeave={e => e.currentTarget.style.opacity=0}>
-                                    <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.85rem' }}>Change Image</span>
+                        {imagePreviews.length > 0 ? (
+                            <div style={{ width: '100%', borderRadius: '8px', overflow: 'hidden', position: 'relative', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', padding: '10px' }}>
+                                {imagePreviews.map((preview, i) => (
+                                    <img key={i} src={preview} alt="Preview" style={{ height: '80px', width: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid var(--color-border)' }} />
+                                ))}
+                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s', width: '100%', height: '100%' }} onMouseEnter={e => e.currentTarget.style.opacity=1} onMouseLeave={e => e.currentTarget.style.opacity=0}>
+                                    <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>Change Images</span>
                                 </div>
                             </div>
                         ) : (
                             <>
                                 <RiUploadCloud2Line size={32} color="var(--color-text-muted)" />
-                                <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 600 }}>Click to browse images</span>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 600 }}>Click to browse images (Max 15)</span>
                             </>
                         )}
-                        <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                        <input type="file" multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                     </label>
-                    <button type="submit" disabled={!selectedFile || uploading} style={{ marginTop: '0.5rem', padding: '0.875rem', background: 'var(--color-accent-primary)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: (selectedFile && !uploading) ? 'pointer' : 'not-allowed', opacity: (selectedFile && !uploading) ? 1 : 0.6 }}>
-                        {uploading ? 'Uploading...' : 'Publish to Homepage'}
+                    <button type="submit" disabled={selectedFiles.length === 0 || uploading} style={{ marginTop: '0.5rem', padding: '0.875rem', background: 'var(--color-accent-primary)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: (selectedFiles.length > 0 && !uploading) ? 'pointer' : 'not-allowed', opacity: (selectedFiles.length > 0 && !uploading) ? 1 : 0.6 }}>
+                        {uploading ? 'Uploading...' : (selectedFiles.length > 0 ? `Publish ${selectedFiles.length} Images to Homepage` : 'Publish to Homepage')}
                     </button>
                 </form>
             </div>
