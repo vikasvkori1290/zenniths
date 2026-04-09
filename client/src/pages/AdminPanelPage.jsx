@@ -13,19 +13,21 @@ const StatCard = ({ title, value, icon, gradient }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
+    whileHover={{ y: -4, boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }}
     style={{
       background: 'var(--color-bg-card)',
-      border: '1px solid var(--color-border)',
-      borderRadius: '16px', padding: '1.5rem',
+      border: '1px solid rgba(0,0,0,0.05)',
+      borderRadius: '20px', padding: '1.5rem',
       display: 'flex', alignItems: 'center', gap: '1.5rem',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+      transition: 'transform 0.2s, box-shadow 0.2s',
     }}
   >
     <div style={{
-      width: '64px', height: '64px', borderRadius: '50%',
+      width: '64px', height: '64px', borderRadius: '18px',
       background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontSize: '1.8rem',
-      boxShadow: 'inset 0 -3px 10px rgba(0,0,0,0.3)',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
     }}>
       {icon}
     </div>
@@ -383,8 +385,8 @@ const AdminPanelPage = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 380px', gap: '2rem', flexWrap: 'wrap' }}>
          
          {/* LEFT COLUMN: Submissions Review Queue */}
-         <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '20px', overflow: 'hidden', height: 'fit-content' }}>
-            <div style={{ padding: '1.5rem 2rem', background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+         <div style={{ background: 'var(--color-bg-card)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '24px', overflow: 'hidden', height: 'fit-content', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+            <div style={{ padding: '1.5rem 2rem', background: 'var(--color-bg-secondary)', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div>
                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Submission Review Queue</h2>
                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>Grade member coding challenge submissions.</p>
@@ -463,7 +465,7 @@ const AdminPanelPage = () => {
          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             
             {/* Dynamic Analytics Chart */}
-            <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '1.5rem' }}>
+            <div style={{ background: 'var(--color-bg-card)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '20px', padding: '1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <RiBarChartLine /> New Signups
@@ -505,7 +507,7 @@ const AdminPanelPage = () => {
             </div>
 
             {/* Announcement Manager */}
-            <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '1.5rem' }}>
+            <div style={{ background: 'var(--color-bg-card)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '20px', padding: '1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <RiMegaphoneLine /> Announcements
                 </h3>
@@ -539,7 +541,7 @@ const AdminPanelPage = () => {
       {/* Gallery */}
       {currentTab === 'gallery' && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-        <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '1.5rem' }}>
+        <div style={{ background: 'var(--color-bg-card)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '20px', padding: '1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <RiImageAddLine /> Upload to Public Gallery
                 </h3>
@@ -575,7 +577,7 @@ const AdminPanelPage = () => {
             </div>
 
             {/* Existing images list */}
-            <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '1.5rem' }}>
+            <div style={{ background: 'var(--color-bg-card)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '20px', padding: '1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     Gallery DB ({images.length})
                 </h3>
@@ -603,8 +605,8 @@ const AdminPanelPage = () => {
 
       {/* ── User Management ── */}
       {currentTab === 'users' && (
-      <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '20px', overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem 2rem', background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+        <div style={{ padding: '1.5rem 2rem', background: 'var(--color-bg-secondary)', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><RiTeamLine /> User Management</h2>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>Promote, demote, or remove members from the platform.</p>
@@ -664,8 +666,8 @@ const AdminPanelPage = () => {
 
       {/* ── Event Attendance Manager ── */}
       {currentTab === 'attendance' && (
-      <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '20px', overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem 2rem', background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+        <div style={{ padding: '1.5rem 2rem', background: 'var(--color-bg-secondary)', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>< RiCalendarEventLine /> Event Attendance</h2>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>Select an event to mark user attendance and export to Excel.</p>

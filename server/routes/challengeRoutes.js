@@ -6,6 +6,7 @@ const {
   createChallenge,
   submitSolution,
   getLeaderboard,
+  getMyChallenges,
 } = require('../controllers/challengeController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
@@ -14,6 +15,8 @@ router.route('/')
   .post(protect, adminOnly, createChallenge);
 
 router.get('/leaderboard', getLeaderboard);
+
+router.get('/my', protect, getMyChallenges);
 
 router.route('/:id')
   .get(getChallengeById);

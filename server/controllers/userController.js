@@ -78,7 +78,7 @@ const updateUserRole = async (req, res, next) => {
       res.status(400);
       return next(new Error('Invalid role'));
     }
-    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true, runValidators: true });
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { returnDocument: 'after', runValidators: true });
     if (!user) {
       res.status(404);
       return next(new Error('User not found'));

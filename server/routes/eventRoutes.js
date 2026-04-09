@@ -9,6 +9,7 @@ const {
   registerTeam,
   deleteEvent,
   toggleVolunteer,
+  getMyEvents,
 } = require('../controllers/eventController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { upload } = require('../utils/cloudinary');
@@ -16,6 +17,8 @@ const { upload } = require('../utils/cloudinary');
 router.route('/')
   .get(getAllEvents)
   .post(protect, adminOnly, upload.single('poster'), createEvent);
+
+router.get('/my', protect, getMyEvents);
 
 router.route('/:id')
   .get(getEventById)

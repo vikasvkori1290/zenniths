@@ -170,7 +170,7 @@ const updateAdminUserRole = async (req, res, next) => {
     if (!['member', 'admin'].includes(role)) {
       res.status(400); return next(new Error('Invalid role'));
     }
-    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { returnDocument: 'after' });
     if (!user) { res.status(404); return next(new Error('User not found')); }
     res.json({ success: true, user });
   } catch (err) {
@@ -199,7 +199,7 @@ const saveEventAttendance = async (req, res, next) => {
     if (!Array.isArray(attendedEmails)) {
       res.status(400); return next(new Error('attendedEmails must be an array'));
     }
-    const event = await Event.findByIdAndUpdate(req.params.id, { attendedEmails }, { new: true });
+    const event = await Event.findByIdAndUpdate(req.params.id, { attendedEmails }, { returnDocument: 'after' });
     if (!event) { res.status(404); return next(new Error('Event not found')); }
     res.json({ success: true, event });
   } catch (err) {

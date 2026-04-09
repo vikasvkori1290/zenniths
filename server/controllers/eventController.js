@@ -253,6 +253,23 @@ const toggleVolunteer = async (req, res, next) => {
   }
 };
 
+// ─── GET /api/events/my ────────────────────────────────────────────────────────
+const getMyEvents = async (req, res, next) => {
+  try {
+    const events = await Event.find({
+      $or: [
+        { registeredUsers: req.user.id },
+        { 'teams.leader': req.user.id },
+        { 'teams.members.email': req.user.email },
+        { volunteers: req.user.id }
+      ]
+    });
+    res.json({ success: true, count: events.length, events });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -262,5 +279,6 @@ module.exports = {
   registerTeam,
   deleteEvent,
   toggleVolunteer,
+  getMyEvents,
 };
 

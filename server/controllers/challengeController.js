@@ -136,6 +136,19 @@ const getLeaderboard = async (req, res, next) => {
   }
 };
 
+// ─── GET /api/challenges/my ───────────────────────────────────────────────────
+const getMyChallenges = async (req, res, next) => {
+  try {
+    // Only count challenges that they have submitted a solution for
+    const submissions = await Submission.find({ user: req.user.id }).select('challenge');
+    // Get unique challenges (just in case they submitted multiple times)
+    const uniqueChallengeIds = [...new Set(submissions.map(s => s.challenge.toString()))];
+    res.json({ success: true, count: uniqueChallengeIds.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Admin grading will be added in Phase 7
 
 module.exports = {
@@ -144,4 +157,5 @@ module.exports = {
   createChallenge,
   submitSolution,
   getLeaderboard,
+  getMyChallenges,
 };

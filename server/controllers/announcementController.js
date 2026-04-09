@@ -26,7 +26,7 @@ exports.createAnnouncement = async (req, res) => {
 // Admin: Update/Toggle announcement
 exports.updateAnnouncement = async (req, res) => {
   try {
-    const announcement = await Announcement.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const announcement = await Announcement.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     if (!announcement) return res.status(404).json({ success: false, message: 'Not found' });
     res.json({ success: true, data: announcement });
   } catch (error) {

@@ -379,7 +379,7 @@ const AuthModal = ({ isOpen, onClose, initialTab = 'login' }) => {
                 marginTop: '0.25rem',
               }}
             >
-              {loading ? <RiLoader4Line className="spin" size={20} /> : tab === 'login' ? 'Log In' : tab === 'verify' ? 'Verify OTP' : 'Create Account'}
+              {loading ? <RiLoader4Line className="animate-spin" size={20} /> : tab === 'login' ? 'Log In' : tab === 'verify' ? 'Verify OTP' : 'Create Account'}
             </motion.button>
           </form>
         </motion.div>

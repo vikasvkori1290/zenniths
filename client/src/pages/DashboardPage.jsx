@@ -13,14 +13,15 @@ import api from '../api/axios';
 // ── Stat Card ─────────────────────────────────────────────────────────────
 const StatCard = ({ icon, label, value, color, sublabel }) => (
   <motion.div
-    whileHover={{ y: -3, boxShadow: `0 12px 30px ${color}25` }}
+    whileHover={{ y: -4, boxShadow: `0 12px 30px ${color}25` }}
     style={{
       background: 'var(--color-bg-card)',
-      border: '1px solid var(--color-border)',
-      borderRadius: '16px', padding: '1.25rem 1.5rem',
+      border: '1px solid rgba(0,0,0,0.05)',
+      borderRadius: '20px', padding: '1.5rem 1.75rem',
       display: 'flex', flexDirection: 'column', gap: '0.5rem',
       transition: 'transform 0.2s, box-shadow 0.2s',
       position: 'relative', overflow: 'hidden',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
     }}
   >
     <div style={{
@@ -224,10 +225,11 @@ const DashboardPage = () => {
       {/* Profile Header Card */}
       <motion.div variants={itemVariants} style={{
         background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: '20px',
-        marginBottom: '1.5rem',
+        border: '1px solid rgba(0,0,0,0.05)',
+        borderRadius: '24px',
+        marginBottom: '2rem',
         position: 'relative', overflow: 'hidden',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
       }}>
         {/* Background Cover Photo */}
         <div style={{
@@ -379,8 +381,9 @@ const DashboardPage = () => {
       {/* Recent Activity */}
       <motion.div variants={itemVariants} style={{
         background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: '16px', padding: '1.5rem',
+        border: '1px solid rgba(0,0,0,0.05)',
+        borderRadius: '20px', padding: '1.5rem',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
       }}>
         <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.25rem' }}>Recent Activity</h3>
         <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>Your latest interactions</p>
