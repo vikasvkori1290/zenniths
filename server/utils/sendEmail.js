@@ -1,30 +1,37 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async (options) => {
-  // 1) Create a transporter
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+// Create transporter once (connection pooling) instead of per-request
+// Using port 465 + SSL (more reliable on cloud servers than 587/STARTTLS)
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // SSL — works better than STARTTLS (587) on cloud hosts like Render
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  pool: true,         // Reuse connections instead of opening new ones each send
+  maxConnections: 3,
+  socketTimeout: 10000,  // 10 second timeout
+  tls: {
+    rejectUnauthorized: false, // Prevent TLS cert errors on cloud networks
+  },
+});
 
-  // 2) Define the email options
+const sendEmail = async (options) => {
   const mailOptions = {
-    from: `"ClubHub Admin" <${process.env.EMAIL_USER}>`,
+    from: `"Zenniths 🚀" <${process.env.EMAIL_USER}>`,
     to: options.email,
     subject: options.subject,
     html: options.html,
   };
 
-  // 3) Actually send the email
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Email successfully sent to:", options.email);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent to ${options.email} — MessageID: ${info.messageId}`);
   } catch (error) {
-    console.error("CRITICAL EMAIL SENDING ERROR:");
-    console.error(error);
+    console.error(`❌ Email FAILED to ${options.email}:`, error.message);
+    throw error; // Re-throw so caller's .catch() can log it
   }
 };
 
