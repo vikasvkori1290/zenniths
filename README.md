@@ -1,5 +1,9 @@
 # 🚀 Zenniths (ClubFlow)
 
+# live link
+
+https://clubflowcmr.netlify.app/
+
 **Build. Compete. Innovate.** 
 
 Zenniths (powered by ClubFlow) is a modern, real-time platform designed specifically for college technical clubs. It serves as the ultimate central hub where students can register for upcoming events, showcase the projects they've poured their hearts into, compete in coding challenges, and climb the ranks on a live club leaderboard.
