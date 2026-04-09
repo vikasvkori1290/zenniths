@@ -37,20 +37,20 @@ const Navbar = ({ onOpenAuth }) => {
   const pillStyle = {
     position: 'fixed',
     top: 0, left: 0, right: 0,
-    zIndex: 300,
+    zIndex: 500,
     display: 'flex',
     justifyContent: 'center',
     pointerEvents: 'none',
   };
 
   const navBarStyle = {
-    width: '100%',
-    maxWidth: scrolled && !isMobile ? '860px' : '100%',
-    background: '#fff',
-    borderRadius: scrolled && !isMobile ? '100px' : '0',
-    boxShadow: scrolled || isMobile ? '0 2px 16px rgba(0,0,0,0.08)' : 'none',
-    border: scrolled && !isMobile ? '1px solid rgba(0,0,0,0.07)' : '1px solid transparent',
-    margin: scrolled && !isMobile ? '0.75rem 1.5rem 0' : '0',
+    width: scrolled && isMobile ? 'calc(100% - 1.5rem)' : '100%',
+    maxWidth: scrolled ? '860px' : '100%',
+    background: scrolled ? 'rgba(255, 255, 255, 0.85)' : '#fff',
+    borderRadius: scrolled ? '100px' : '0',
+    boxShadow: scrolled ? '0 8px 32px rgba(0,0,0,0.08)' : 'none',
+    border: scrolled ? '1px solid rgba(0,0,0,0.07)' : '1px solid transparent',
+    margin: scrolled ? (isMobile ? '0.5rem auto 0' : '0.75rem auto 0') : '0 auto',
     transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
     pointerEvents: 'all',
     backdropFilter: scrolled ? 'blur(16px)' : 'none',
@@ -146,12 +146,15 @@ const Navbar = ({ onOpenAuth }) => {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               style={{
                 position: 'fixed',
-                top: `${NAVBAR_H}px`,
-                left: 0, right: 0,
+                top: scrolled ? `${NAVBAR_H + 16}px` : `${NAVBAR_H}px`,
+                left: scrolled ? '1rem' : '0', 
+                right: scrolled ? '1rem' : '0',
+                borderRadius: scrolled ? '20px' : '0',
                 zIndex: 400,
                 background: '#fff',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                boxShadow: scrolled ? '0 10px 40px rgba(0,0,0,0.15)' : '0 8px 32px rgba(0,0,0,0.12)',
                 borderTop: '1px solid #e2e8f0',
+                border: scrolled ? '1px solid #e2e8f0' : 'none',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 1.5rem 1.25rem' }}>
@@ -193,7 +196,7 @@ const Navbar = ({ onOpenAuth }) => {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMobileOpen(false)}
-              style={{ position: 'fixed', inset: 0, top: `${NAVBAR_H}px`, background: 'rgba(15,23,42,0.35)', zIndex: 399 }}
+              style={{ position: 'fixed', inset: 0, top: 0, background: 'rgba(15,23,42,0.35)', zIndex: 399 }}
             />
           </>
         )}
