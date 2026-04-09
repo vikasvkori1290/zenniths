@@ -32,13 +32,32 @@ connectDB();
 const app = express();
 const httpServer = http.createServer(app);
 
+// ─── CORS Origin Validator ───────────────────────────────────────────────────
+// Trims trailing slashes before comparing so 'https://app.netlify.app/'
+// and 'https://app.netlify.app' are treated as identical.
+const allowedOrigins = [
+  (process.env.CLIENT_URL || '').replace(/\/$/, ''),
+  'http://localhost:5173',
+  'http://localhost:3000',
+].filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
+    if (!origin) return callback(null, true);
+    const normalised = origin.replace(/\/$/, '');
+    if (allowedOrigins.includes(normalised)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: Origin '${origin}' not allowed`));
+    }
+  },
+  credentials: true,
+};
+
 // ─── Socket.io setup ─────────────────────────────────────────────────────────
 const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
+  cors: { ...corsOptions, methods: ['GET', 'POST'] },
 });
 
 // Make io accessible anywhere via req.app.get('io')
@@ -47,12 +66,7 @@ registerSocketHandlers(io);
 
 // ─── Core Middleware ─────────────────────────────────────────────────────────
 app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true, // Allow cookies (refresh token)
-  })
-);
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
