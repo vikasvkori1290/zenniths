@@ -56,15 +56,12 @@ const registerUser = async (req, res, next) => {
       <p>This code will expire in 10 minutes.</p>
     `;
 
-    try {
-      await sendEmail({
-        email: user.email,
-        subject: 'Verify your ClubFlow account',
-        html: message,
-      });
-    } catch (error) {
-      console.log('Error sending email', error);
-    }
+    // Send email fire-and-forget — respond immediately, don't block on SMTP
+    sendEmail({
+      email: user.email,
+      subject: 'Verify your ClubFlow account',
+      html: message,
+    }).catch(err => console.error('[OTP email error]', err.message));
 
     res.status(201).json({
       success: true,
@@ -100,16 +97,12 @@ const loginUser = async (req, res, next) => {
       user.otpExpires = Date.now() + 10 * 60 * 1000;
       await user.save({ validateBeforeSave: false });
 
-      try {
-        await sendEmail({
-          email: user.email,
-          subject: 'ClubFlow OTP Verification',
-          html: `<p>Your verification code is: <strong>${otp}</strong>.</p><p>It will expire in 10 minutes.</p>`
-        });
-      } catch (emailErr) {
-        console.error('Failed to send OTP email during login:', emailErr.message);
-        // Still continue — user can request OTP again
-      }
+      // Send new OTP fire-and-forget — don't block the response on SMTP
+      sendEmail({
+        email: user.email,
+        subject: 'ClubFlow OTP Verification',
+        html: `<p>Your verification code is: <strong>${otp}</strong>.</p><p>It will expire in 10 minutes.</p>`
+      }).catch(emailErr => console.error('[Login OTP email error]', emailErr.message));
 
       return res.status(200).json({
         success: true,
