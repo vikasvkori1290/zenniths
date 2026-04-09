@@ -128,29 +128,162 @@ input::placeholder {
   color: var(--color-text-muted);
 }
 
-/* Mobile Responsive */
+textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ── Sidebar Layout ─────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .desktop-nav {
-    display: none !important;
+  /* Hide desktop sidebar, show mobile topbar */
+  .sidebar-desktop { display: none; }
+  .mobile-topbar   { display: flex !important; }
+  .desktop-nav     { display: none !important; }
+  .mobile-menu-btn { display: flex !important; }
+
+  /* Hide brand name on mobile — show logo icon only */
+  .brand-text { display: none !important; }
+
+  /* Shrink main content padding */
+  main { padding: 1rem !important; }
+
+  /* Page headers: stack title + button vertically */
+  .page-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
   }
-  .mobile-menu-btn {
-    display: flex !important;
+
+  /* Full-width action buttons on mobile */
+  .page-header-row button,
+  .page-header-row a {
+    width: 100%;
+    justify-content: center;
   }
 }
 
+/* ── Grid Layouts ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Stat grids: 2 columns instead of 4 */
+  [class*="stat-grid"],
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Project/event cards: single column */
+  [style*="repeat(auto-fill"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Stat grids: 1 column on very small screens */
+  [class*="stat-grid"],
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Typography Scaling ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  h1 { font-size: clamp(1.4rem, 5vw, 2rem) !important; }
+  h2 { font-size: clamp(1.1rem, 4vw, 1.5rem) !important; }
+  h3 { font-size: clamp(0.95rem, 3.5vw, 1.25rem) !important; }
+}
+
+/* ── Tables: horizontal scroll on mobile ────────────────────────────────── */
+@media (max-width: 768px) {
+  .table-wrapper,
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+}
+
+/* ── Landing Page ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Hero section */
+  .landing-hero {
+    padding-top: 5rem !important;
+    padding-bottom: 3rem !important;
+    text-align: center;
+  }
+
+  .landing-hero h1 {
+    font-size: clamp(2rem, 9vw, 3.5rem) !important;
+  }
+
+  /* Feature/feature-card grids */
+  .landing-grid,
+  .features-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Center CTA buttons */
+  .hero-cta-row {
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  .hero-cta-row a,
+  .hero-cta-row button {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+  }
+
+  /* Navbar: hide desktop links */
+  .nav-links { display: none !important; }
+}
+
+/* ── Auth Modal ─────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Make auth modal full-width on small phones */
+  [class*="auth-modal"],
+  [style*="maxWidth: '480px'"] {
+    max-width: 100% !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* ── Submit Project Modal ────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Stack the two-column grid rows */
+  .submit-modal-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Dashboard Cards ────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .glass-card {
     border-radius: 12px;
+    padding: 1rem !important;
   }
 }
 
-/* Sidebar Layout */
+/* ── Section Spacing: reduce huge gaps on mobile ────────────────────────── */
 @media (max-width: 768px) {
-  .sidebar-desktop {
-    display: none;
+  /* Hero section */
+  .hero-section {
+    padding-top: 2rem !important;
+    padding-bottom: 3rem !important;
   }
-  .mobile-topbar {
-    display: flex !important;
+
+  /* All landing sections with large top/bottom padding */
+  section {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+
+  /* Desktop-style margins that create gaps */
+  [style*="marginBottom: '6rem'"],
+  [style*="marginBottom: '8rem'"],
+  [style*="marginBottom: '5rem'"] {
+    margin-bottom: 2rem !important;
   }
 }
 

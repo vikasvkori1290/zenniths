@@ -47,6 +47,7 @@ const HeroSection = ({ onOpenAuth }) => {
   return (
     <section
       ref={ref}
+      className="hero-section"
       style={{
         minHeight: 'auto',
         display: 'flex',
@@ -59,6 +60,11 @@ const HeroSection = ({ onOpenAuth }) => {
         textAlign: 'center',
       }}
     >
+      <style>{`
+        @media (max-width: 768px) {
+          .hero-section { padding-bottom: 3rem !important; padding-top: 2rem !important; }
+        }
+      `}</style>
       {/* Ambient blobs */}
       <div style={{
         position: 'absolute', top: '-10%', left: '10%',
@@ -218,19 +224,24 @@ const HeroSection = ({ onOpenAuth }) => {
         </motion.div>
 
         <motion.div variants={itemVariants} style={{
-          display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '1rem',
+          width: '100%',
+          maxWidth: '520px',
+          margin: '0 auto',
         }}>
           {statsDisplay.map(({ icon, value, label }) => (
             <div key={label} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: '0.35rem', padding: '1.25rem 2rem',
+              gap: '0.35rem', padding: '1rem 0.75rem',
               background: 'rgba(255,255,255,0.03)',
               border: '1px solid var(--color-border)',
-              borderRadius: '16px', minWidth: '140px',
+              borderRadius: '16px',
             }}>
               <span style={{ color: 'var(--color-accent-primary)' }}>{icon}</span>
-              <span style={{ fontSize: '1.75rem', fontWeight: 800 }}>{value}</span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: '1.5rem', fontWeight: 800 }}>{value}</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500, textAlign: 'center' }}>{label}</span>
             </div>
           ))}
         </motion.div>

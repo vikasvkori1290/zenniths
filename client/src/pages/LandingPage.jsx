@@ -20,7 +20,7 @@ const LandingPage = () => {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar onOpenAuth={openAuth} />
 
-      <main style={{ flex: 1, paddingTop: '64px' }}>
+      <main style={{ flex: 1, paddingTop: '72px' }}>
         <AnnouncementTicker />
         <HeroSection onOpenAuth={openAuth} />
         <EventsStrip onOpenAuth={openAuth} />

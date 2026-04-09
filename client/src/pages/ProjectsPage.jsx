@@ -156,7 +156,7 @@ const SubmitProjectModal = ({ onClose, onSuccess }) => {
           </div>
 
           {/* Row 1: Team + Project */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="submit-modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
               <label style={labelStyle}><RiTeamLine style={{ display: 'inline', marginRight: '0.3rem' }} />Team Name</label>
               <input style={inputStyle} placeholder="e.g. Team Alpha" value={form.teamName}
