@@ -99,4 +99,24 @@ const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`🚀 ClubFlow Server running on http://localhost:${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  // ─── Keep-Alive Self-Ping (Render Free Tier) ──────────────────────────────
+  // Render spins down free services after 15min of inactivity. We self-ping
+  // every 14 minutes in production to keep the server alive 24/7.
+  if (process.env.NODE_ENV === 'production' && process.env.RENDER_EXTERNAL_URL) {
+    const PING_URL = `${process.env.RENDER_EXTERNAL_URL}/api/health`;
+    const PING_INTERVAL = 14 * 60 * 1000; // 14 minutes in milliseconds
+
+    setInterval(async () => {
+      try {
+        const res = await fetch(PING_URL);
+        const data = await res.json();
+        console.log(`💓 Keep-alive ping sent → ${data.status} at ${data.timestamp}`);
+      } catch (err) {
+        console.warn('⚠️  Keep-alive ping failed:', err.message);
+      }
+    }, PING_INTERVAL);
+
+    console.log(`💓 Keep-alive self-ping active → ${PING_URL} every 14 min`);
+  }
 });

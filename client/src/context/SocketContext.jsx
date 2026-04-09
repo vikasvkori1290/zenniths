@@ -8,10 +8,15 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
+    // Dynamically resolve backend URL for dev vs. production
+    const SERVER_URL = import.meta.env.MODE === 'development'
+      ? 'http://localhost:5000'
+      : import.meta.env.VITE_API_URL;
+
     // Connect to the backend Socket.io server
-    socketRef.current = io('http://localhost:5000', {
+    socketRef.current = io(SERVER_URL, {
       withCredentials: true,
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'], // Allow polling fallback in production
     });
 
     socketRef.current.on('connect', () => {
