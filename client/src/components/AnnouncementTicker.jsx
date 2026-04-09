@@ -29,6 +29,13 @@ const AnnouncementTicker = () => {
 
   if (announcements.length === 0) return null;
 
+  // Ensure there's enough content to span large screens seamlessly
+  // by repeating the array until it has a healthy length (e.g., at least 8 items)
+  const displayItems = [...announcements];
+  while (displayItems.length < 8) {
+    displayItems.push(...announcements);
+  }
+
   return (
     <div style={{
       background: 'var(--color-bg-secondary)',
@@ -60,30 +67,41 @@ const AnnouncementTicker = () => {
       </div>
 
       <div style={{ overflow: 'hidden', flex: 1, position: 'relative' }}>
-        <motion.div
-          animate={{ x: [0, -1500] }}
-          transition={{
-            x: {
-              repeat: Infinity,
-              repeatType: "loop",
-              duration: 35,
-              ease: "linear",
-            },
-          }}
+        <style>{`
+          @keyframes ticker-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .ticker-content:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
+        <div
+          className="ticker-content"
           style={{
             display: 'flex',
-            gap: '4rem',
-            whiteSpace: 'nowrap',
-            width: 'fit-content'
+            width: 'max-content',
+            animation: 'ticker-scroll 35s linear infinite',
+            willChange: 'transform'
           }}
         >
-          {/* Repeat for seamless loop */}
-          {[...announcements, ...announcements, ...announcements].map((text, i) => (
-            <span key={i} style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
-              {text}
-            </span>
-          ))}
-        </motion.div>
+          {/* Group 1 */}
+          <div style={{ display: 'flex', gap: '4rem', paddingRight: '4rem' }}>
+            {displayItems.map((text, i) => (
+              <span key={`g1-${i}`} style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                {text}
+              </span>
+            ))}
+          </div>
+          {/* Group 2 (Exact duplicate for seamless looping) */}
+          <div style={{ display: 'flex', gap: '4rem', paddingRight: '4rem' }}>
+            {displayItems.map((text, i) => (
+              <span key={`g2-${i}`} style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                {text}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

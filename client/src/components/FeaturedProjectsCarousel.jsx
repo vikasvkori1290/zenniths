@@ -35,12 +35,10 @@ const FeaturedProjectsCarousel = () => {
         </motion.div>
 
         <div style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
           gap: '1.5rem',
-          overflowX: 'auto',
           paddingBottom: '2rem',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
         }}>
           {projects.map((project, i) => (
             <motion.div
@@ -50,7 +48,6 @@ const FeaturedProjectsCarousel = () => {
               transition={{ duration: 0.5, delay: i * 0.1 }}
               whileHover={{ y: -8 }}
               style={{
-                minWidth: '320px',
                 background: 'var(--color-bg-card)',
                 border: '1px solid var(--color-border)',
                 borderRadius: '24px',
