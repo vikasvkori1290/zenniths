@@ -94,6 +94,14 @@ const eventSchema = new mongoose.Schema(
         registeredAt: { type: Date, default: Date.now },
       },
     ],
+    feedbacks: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        rating: { type: Number, required: true, min: 1, max: 5 },
+        comment: { type: String, maxlength: 500 },
+        createdAt: { type: Date, default: Date.now },
+      }
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -102,6 +110,13 @@ const eventSchema = new mongoose.Schema(
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+// Virtual property for average rating
+eventSchema.virtual('averageRating').get(function () {
+  if (!this.feedbacks || this.feedbacks.length === 0) return 0;
+  const sum = this.feedbacks.reduce((acc, current) => acc + current.rating, 0);
+  return (sum / this.feedbacks.length).toFixed(1);
+});
 
 // Virtual property to check if the event is upcoming
 eventSchema.virtual('isUpcoming').get(function () {

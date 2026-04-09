@@ -270,6 +270,57 @@ const getMyEvents = async (req, res, next) => {
   }
 };
 
+// ─── POST /api/events/:id/feedback ─────────────────────────────────────────────
+const addEventFeedback = async (req, res, next) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      res.status(404);
+      return next(new Error('Event not found'));
+    }
+
+    if (event.date > new Date()) {
+      res.status(400);
+      return next(new Error('Cannot review an event that has not yet occurred.'));
+    }
+
+    const { rating, comment } = req.body;
+    if (!rating || rating < 1 || rating > 5) {
+      res.status(400);
+      return next(new Error('Please provide a valid rating between 1 and 5.'));
+    }
+
+    const alreadyReviewed = event.feedbacks && event.feedbacks.some(
+      (feedback) => feedback.user.toString() === req.user.id
+    );
+
+    if (alreadyReviewed) {
+      res.status(400);
+      return next(new Error('You have already submitted feedback for this event.'));
+    }
+
+    const review = {
+      user: req.user.id,
+      rating: Number(rating),
+      comment: comment || '',
+    };
+
+    if (!event.feedbacks) {
+      event.feedbacks = [];
+    }
+    
+    event.feedbacks.push(review);
+    await event.save();
+
+    // Populate createdBy etc. to return a fully populated event object
+    await event.populate('createdBy', 'name');
+
+    res.status(201).json({ success: true, message: 'Feedback submitted successfully', event });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -280,5 +331,6 @@ module.exports = {
   deleteEvent,
   toggleVolunteer,
   getMyEvents,
+  addEventFeedback,
 };
 

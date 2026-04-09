@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RiCalendarEventLine, RiMapPinLine, RiTimeLine, RiTeamLine,
-  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine, RiDownloadLine, RiArrowRightLine, RiNotification3Line
+  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine, RiDownloadLine, RiArrowRightLine, RiNotification3Line, RiStarFill, RiStarLine, RiFeedbackLine
 } from 'react-icons/ri';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -97,7 +97,7 @@ const TeamRosterCard = ({ team }) => {
   );
 };
 
-const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, currentUserId, isAdmin, onOpenRoster, onPosterClick, user, onShowAlert, onVolunteer }) => {
+const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, currentUserId, isAdmin, onOpenRoster, onPosterClick, user, onShowAlert, onVolunteer, onOpenFeedback }) => {
   const isRegistered = event.registeredUsers?.some(id => (id?._id || id)?.toString() === currentUserId?.toString());
   const hasTeamRegistered = event.teams?.some(t => ((t.leader?._id || t.leader)?.toString() === currentUserId?.toString()) || t.members?.some(m => m.email === user?.email));
   const isVolunteered = event.volunteers?.some(id => (id?._id || id)?.toString() === currentUserId?.toString());
@@ -373,8 +373,19 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                <RiTeamLine size={18} />
-                {isTeamEvent ? `${event.teams?.length || 0} Teams` : `${event.registeredUsers?.length || 0} Registered`}
+                {!isUpcoming ? (
+                  <button onClick={() => onOpenFeedback(event)} style={{ padding: '0.5rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '8px', background: 'rgba(234, 179, 8, 0.1)', color: '#ca8a04', border: '1px solid rgba(234, 179, 8, 0.3)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background='rgba(234, 179, 8, 0.2)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background='rgba(234, 179, 8, 0.1)' }}>
+                    <RiStarFill size={16} />
+                    {event.feedbacks?.length > 0 ? `${event.averageRating || '5.0'} (${event.feedbacks.length} Reviews)` : 'Leave Feedback'}
+                  </button>
+                ) : (
+                  <>
+                    <RiTeamLine size={18} />
+                    {isTeamEvent ? `${event.teams?.length || 0} Teams` : `${event.registeredUsers?.length || 0} Registered`}
+                  </>
+                )}
                 {isAdmin && (event.registeredUsers?.length > 0 || event.teams?.length > 0) && (
                   <button onClick={() => onOpenRoster(event._id)} style={{ marginLeft: '0.5rem', padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderRadius: '6px', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', cursor: 'pointer', fontWeight: 700 }}>
                     View Roster
@@ -541,6 +552,11 @@ const EventsPage = () => {
   const [posterPreview, setPosterPreview] = useState(null);
   const [editPosterPreview, setEditPosterPreview] = useState(null);
   const [alertData, setAlertData] = useState(null);
+
+  // --- Feedback ---
+  const [feedbackEvent, setFeedbackEvent] = useState(null);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackComment, setFeedbackComment] = useState('');
 
   useEffect(() => {
     fetchEvents(activeTab);
@@ -773,6 +789,26 @@ const EventsPage = () => {
     document.body.removeChild(link);
   };
 
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const { data } = await api.post(`/events/${feedbackEvent._id}/feedback`, { rating: feedbackRating, comment: feedbackComment });
+      if (data.success && data.event) {
+        setEvents(prev => prev.map(ev => ev._id === feedbackEvent._id ? data.event : ev));
+        setFeedbackEvent(null);
+        setFeedbackRating(5);
+        setFeedbackComment('');
+        setAlertData({ title: 'Feedback Submitted!', message: 'Thank you for reviewing.', type: 'success' });
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to submit feedback.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: '1200px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -820,7 +856,7 @@ const EventsPage = () => {
           {events.length > 0 ? (
             <motion.div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
               {events.map((event) => (
-                <EventCard key={event._id} event={event} onToggleRegister={handleToggleRegister} onDelete={handleDeleteEvent} onRegisterTeam={handleRegisterTeam} onEdit={openEditModal} currentUserId={user?.id || user?._id} isAdmin={user?.role === 'admin'} onOpenRoster={handleOpenRoster} onPosterClick={setFullScreenPoster} user={user} onShowAlert={setAlertData} onVolunteer={handleToggleVolunteer} />
+                <EventCard key={event._id} event={event} onToggleRegister={handleToggleRegister} onDelete={handleDeleteEvent} onRegisterTeam={handleRegisterTeam} onEdit={openEditModal} currentUserId={user?.id || user?._id} isAdmin={user?.role === 'admin'} onOpenRoster={handleOpenRoster} onPosterClick={setFullScreenPoster} user={user} onShowAlert={setAlertData} onVolunteer={handleToggleVolunteer} onOpenFeedback={setFeedbackEvent} />
               ))}
             </motion.div>
           ) : (
@@ -1298,6 +1334,87 @@ const EventsPage = () => {
               </button>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Feedback Modal */}
+      <AnimatePresence>
+        {feedbackEvent && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1100,
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+          }}>
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} style={{
+              background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '24px',
+              width: '100%', maxWidth: '500px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontWeight: '800', fontSize: '1.25rem', marginBottom: '0.2rem' }}>Feedback & Reviews</h3>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{feedbackEvent.title}</div>
+                </div>
+                <button onClick={() => setFeedbackEvent(null)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}><RiCloseLine /></button>
+              </div>
+
+              <div style={{ padding: '1.5rem 2rem', overflowY: 'auto' }}>
+                <form onSubmit={handleFeedbackSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                  {!user ? (
+                    <div style={{ padding: '1rem', background: 'rgba(234, 179, 8, 0.1)', color: '#ca8a04', borderRadius: '12px', border: '1px solid rgba(234, 179, 8, 0.3)', fontSize: '0.9rem', fontWeight: 600 }}>
+                      You must be logged in to leave feedback.
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.5rem' }}>Your Rating</label>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          {[1,2,3,4,5].map(star => (
+                            <button
+                              key={star} type="button"
+                              onClick={() => setFeedbackRating(star)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: star <= feedbackRating ? '#ca8a04' : 'var(--color-text-muted)' }}
+                            >
+                              {star <= feedbackRating ? <RiStarFill size={28} /> : <RiStarLine size={28} />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Comment (Optional)</label>
+                        <textarea rows={3} placeholder="What did you think of this event?" value={feedbackComment} onChange={e => setFeedbackComment(e.target.value)}
+                          style={{ width: '100%', padding: '0.8rem 1rem', background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text-primary)', resize: 'vertical' }} />
+                      </div>
+                      <button type="submit" disabled={submitting} style={{ padding: '0.875rem', borderRadius: '12px', background: 'var(--color-accent-primary)', border: 'none', color: '#fff', fontWeight: 700, cursor: 'pointer', marginTop: '0.5rem' }}>
+                        {submitting ? 'Submitting...' : 'Submit Feedback'}
+                      </button>
+                    </>
+                  )}
+                </form>
+
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Overall Feedback ({feedbackEvent.feedbacks?.length || 0})</h4>
+                {feedbackEvent.feedbacks?.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {feedbackEvent.feedbacks.map((fb, idx) => (
+                      <div key={idx} style={{ background: 'var(--color-bg-secondary)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                           <div style={{ display: 'flex', gap: '0.2rem', color: '#ca8a04' }}>
+                              {[1,2,3,4,5].map(star => star <= fb.rating ? <RiStarFill key={star} size={14} /> : null)}
+                           </div>
+                           <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                             {new Date(fb.createdAt).toLocaleDateString()}
+                           </span>
+                        </div>
+                        {fb.comment && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)', lineHeight: 1.5, margin: 0 }}>"{fb.comment}"</p>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textAlign: 'center', padding: '1rem 0' }}>No feedback yet. Be the first!</p>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 

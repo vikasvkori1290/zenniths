@@ -10,6 +10,7 @@ const {
   deleteEvent,
   toggleVolunteer,
   getMyEvents,
+  addEventFeedback,
 } = require('../controllers/eventController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { upload } = require('../utils/cloudinary');
@@ -33,5 +34,8 @@ router.post('/:id/register-team', protect, registerTeam);
 
 // Volunteer for an event
 router.patch('/:id/volunteer', protect, toggleVolunteer);
+
+// Add feedback for an event
+router.post('/:id/feedback', protect, addEventFeedback);
 
 module.exports = router;
