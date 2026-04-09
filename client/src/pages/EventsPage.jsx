@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RiCalendarEventLine, RiMapPinLine, RiTimeLine, RiTeamLine,
-  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine, RiDownloadLine, RiArrowRightLine
+  RiCheckLine, RiAddLine, RiSearchLine, RiInformationLine, RiDeleteBinLine, RiEdit2Line, RiImageAddLine, RiCloseLine, RiArrowRightSLine, RiShareForwardLine, RiDownloadLine, RiArrowRightLine, RiNotification3Line
 } from 'react-icons/ri';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -383,26 +383,52 @@ const EventCard = ({ event, onToggleRegister, onDelete, onRegisterTeam, onEdit, 
               </div>
 
               {isUpcoming && (
-                <button
-                  onClick={handleRegister} disabled={loading || isVolunteered}
-                  onMouseEnter={() => setHoverReg(true)}
-                  onMouseLeave={() => setHoverReg(false)}
-                  title={isVolunteered ? 'Cancel volunteering first to register' : ''}
-                  style={{
-                    padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', border: 'none',
-                    cursor: isVolunteered ? 'not-allowed' : 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s',
-                    opacity: isVolunteered ? 0.45 : 1,
-                    ...(alreadyDone
-                      ? (hoverReg
-                          ? { background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }
-                          : { background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' })
-                      : { background: 'var(--color-accent-primary)', color: '#fff' }
-                    )
-                  }}
-                >
-                  {alreadyDone ? (hoverReg ? <><RiCloseLine size={18} /> Cancel</> : <><RiCheckLine size={18} /> Registered</>) : (isTeamEvent ? '👥 Register Team' : 'Register Now')}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {alreadyDone && (
+                    <button
+                      onClick={() => {
+                        const title = encodeURIComponent(event.title);
+                        const details = encodeURIComponent(event.description || '');
+                        const location = encodeURIComponent(event.location || '');
+                        const start = new Date(event.date);
+                        const end = new Date(start.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours default duration
+                        const fmt = d => d.toISOString().replace(/-|:|\.\d+/g, '');
+                        const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${fmt(start)}/${fmt(end)}`;
+                        window.open(gcalUrl, '_blank');
+                      }}
+                      title="Add to Google Calendar"
+                      style={{
+                        padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-border)',
+                        background: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-accent-primary)'; e.currentTarget.style.borderColor = 'var(--color-accent-primary)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)'; }}
+                    >
+                      <RiNotification3Line size={18} />
+                    </button>
+                  )}
+                  <button
+                    onClick={handleRegister} disabled={loading || isVolunteered}
+                    onMouseEnter={() => setHoverReg(true)}
+                    onMouseLeave={() => setHoverReg(false)}
+                    title={isVolunteered ? 'Cancel volunteering first to register' : ''}
+                    style={{
+                      padding: '0.6rem 1.25rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', border: 'none',
+                      cursor: isVolunteered ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s',
+                      opacity: isVolunteered ? 0.45 : 1,
+                      ...(alreadyDone
+                        ? (hoverReg
+                            ? { background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }
+                            : { background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' })
+                        : { background: 'var(--color-accent-primary)', color: '#fff' }
+                      )
+                    }}
+                  >
+                    {alreadyDone ? (hoverReg ? <><RiCloseLine size={18} /> Cancel</> : <><RiCheckLine size={18} /> Registered</>) : (isTeamEvent ? '👥 Register Team' : 'Register Now')}
+                  </button>
+                </div>
               )}
             </div>
           </div>
