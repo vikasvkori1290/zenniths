@@ -57,11 +57,24 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
+  // Called after OAuth login to sync user into context
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data } = await api.get('/auth/me');
+      setUser(data.user);
+      return data.user;
+    } catch {
+      localStorage.removeItem('accessToken');
+      setUser(null);
+      return null;
+    }
+  }, []);
+
   const isAdmin = user?.role === 'admin';
   const isMember = user?.role === 'member' || isAdmin;
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, verifyOtp, logout, isAdmin, isMember }}>
+    <AuthContext.Provider value={{ user, loading, login, register, verifyOtp, logout, refreshUser, isAdmin, isMember }}>
       {children}
     </AuthContext.Provider>
   );
