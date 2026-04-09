@@ -23,14 +23,27 @@ const { upload } = require('../utils/cloudinary');
  *   });
  *   // data.url contains the Cloudinary secure URL
  */
+// Admin-only general upload
 router.post('/', protect, adminOnly, upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }
   res.json({
     success: true,
-    url: req.file.path,      // Cloudinary secure URL
-    public_id: req.file.filename, // Cloudinary public_id for deletion later
+    url: req.file.path,
+    public_id: req.file.filename,
+  });
+});
+
+// Authenticated users can upload project thumbnails
+router.post('/project', protect, upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+  res.json({
+    success: true,
+    url: req.file.path,
+    public_id: req.file.filename,
   });
 });
 

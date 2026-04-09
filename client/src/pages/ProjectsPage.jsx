@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RiStarLine, RiGithubFill, RiExternalLinkLine, RiStarFill,
-  RiSearchLine, RiAddLine, RiFolderLine, RiCloseLine, RiDeleteBinLine, RiEdit2Line,
-  RiCodeSSlashLine, RiTeamLine
+  RiSearchLine, RiAddLine, RiFolderLine, RiCloseLine, RiDeleteBinLine,
+  RiCodeSSlashLine, RiTeamLine, RiCalendarLine, RiLink, RiCheckLine, RiImageAddLine,
 } from 'react-icons/ri';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +20,245 @@ const getRankBadge = (score = 0) => {
   if (score >= 500) return { label: '🔥 Expert', color: '#ef4444' };
   if (score >= 100) return { label: '⚡ Contributor', color: '#7c3aed' };
   return { label: '🌱 Newbie', color: '#10b981' };
+};
+
+// ── Submit Project Modal ───────────────────────────────────────────────────
+const TECH_OPTIONS = ['React', 'Node.js', 'MongoDB', 'Python', 'Vue.js', 'TypeScript',
+  'TailwindCSS', 'Express', 'Next.js', 'Flutter', 'Firebase', 'Go', 'PostgreSQL',
+  'Docker', 'GraphQL', 'Redis', 'Java', 'Swift', 'Kotlin',
+];
+
+const inputStyle = {
+  width: '100%', padding: '0.75rem 1rem',
+  background: '#f8faff', border: '1px solid #e2e8f0',
+  borderRadius: '12px', color: '#1e293b', fontSize: '0.9rem', outline: 'none',
+  boxSizing: 'border-box', transition: 'border-color 0.2s, box-shadow 0.2s',
+};
+const labelStyle = { fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', display: 'block' };
+
+const SubmitProjectModal = ({ onClose, onSuccess }) => {
+  const [form, setForm] = useState({
+    teamName: '', title: '', repoUrl: '', liveUrl: '', eventDate: '',
+    description: '', techStack: [], thumbnail: '',
+  });
+  const [techInput, setTechInput] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handle = (field, val) => setForm(f => ({ ...f, [field]: val }));
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    // Show preview immediately
+    setImagePreview(URL.createObjectURL(file));
+    // Upload to Cloudinary
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const { data } = await api.post('/upload/project', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (data.success) handle('thumbnail', data.url);
+    } catch {
+      setError('Image upload failed. Please try again.');
+      setImagePreview(null);
+    } finally { setUploadingImage(false); }
+  };
+
+  const addTech = (tech) => {
+    const t = tech.trim();
+    if (t && !form.techStack.includes(t)) {
+      setForm(f => ({ ...f, techStack: [...f.techStack, t] }));
+    }
+    setTechInput('');
+  };
+  const removeTech = (t) => setForm(f => ({ ...f, techStack: f.techStack.filter(x => x !== t) }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.title.trim()) return setError('Project name is required.');
+    if (form.techStack.length === 0) return setError('Add at least one technology.');
+    if (!form.description.trim()) return setError('Description is required.');
+    setSubmitting(true); setError('');
+    try {
+      const payload = { ...form };
+      if (!payload.eventDate) delete payload.eventDate;
+      const { data } = await api.post('/projects', payload);
+      if (data.success) { onSuccess(data.project); onClose(); }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Submission failed. Please try again.');
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+    >
+      <motion.div
+        initial={{ scale: 0.92, y: 30, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ type: 'spring', damping: 24 }}
+        onClick={e => e.stopPropagation()}
+        style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
+      >
+        {/* Header */}
+        <div style={{ padding: '1.5rem 1.75rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>🚀 Submit Your Project</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.82rem', margin: '0.25rem 0 0' }}>Showcase your work to the community</p>
+          </div>
+          <button onClick={onClose} style={{ background: '#f1f5f9', border: 'none', color: '#64748b', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <RiCloseLine size={20} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ overflowY: 'auto', padding: '1.5rem 1.75rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+
+          {/* Project Thumbnail */}
+          <div>
+            <label style={labelStyle}><RiImageAddLine style={{ display: 'inline', marginRight: '0.3rem' }} />Project Image</label>
+            <div
+              onClick={() => !uploadingImage && fileInputRef.current?.click()}
+              style={{ border: '2px dashed #bfdbfe', borderRadius: '14px', background: '#f8faff', height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: uploadingImage ? 'wait' : 'pointer', overflow: 'hidden', position: 'relative', transition: 'border-color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#2563eb'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#bfdbfe'}
+            >
+              {imagePreview ? (
+                <>
+                  <img src={imagePreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {uploadingImage && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, color: '#2563eb' }}>Uploading...</div>
+                  )}
+                  {!uploadingImage && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                      onMouseLeave={e => e.currentTarget.style.opacity = 0}>
+                      <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem' }}>Change Image</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                  <RiImageAddLine size={32} style={{ marginBottom: '0.5rem', color: '#93c5fd' }} />
+                  <p style={{ fontSize: '0.85rem', fontWeight: 600, margin: 0, color: '#475569' }}>Click to upload project image</p>
+                  <p style={{ fontSize: '0.75rem', margin: '0.25rem 0 0', color: '#94a3b8' }}>PNG, JPG, WEBP up to 5MB</p>
+                </div>
+              )}
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+          </div>
+
+          {/* Row 1: Team + Project */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={labelStyle}><RiTeamLine style={{ display: 'inline', marginRight: '0.3rem' }} />Team Name</label>
+              <input style={inputStyle} placeholder="e.g. Team Alpha" value={form.teamName}
+                onChange={e => handle('teamName', e.target.value)}
+                onFocus={e => e.target.style.borderColor = '#7c3aed'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}><RiFolderLine style={{ display: 'inline', marginRight: '0.3rem' }} />Project Name *</label>
+              <input style={inputStyle} placeholder="e.g. ClubFlow" value={form.title}
+                onChange={e => handle('title', e.target.value)}
+                onFocus={e => e.target.style.borderColor = '#7c3aed'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              />
+            </div>
+          </div>
+
+          {/* Row 2: GitHub + Live Demo */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={labelStyle}><RiGithubFill style={{ display: 'inline', marginRight: '0.3rem' }} />GitHub Link</label>
+              <input style={inputStyle} placeholder="https://github.com/..." value={form.repoUrl}
+                onChange={e => handle('repoUrl', e.target.value)}
+                onFocus={e => e.target.style.borderColor = '#7c3aed'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}><RiLink style={{ display: 'inline', marginRight: '0.3rem' }} />Live Demo Link</label>
+              <input style={inputStyle} placeholder="https://your-app.com" value={form.liveUrl}
+                onChange={e => handle('liveUrl', e.target.value)}
+                onFocus={e => e.target.style.borderColor = '#7c3aed'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Event Date */}
+          <div>
+            <label style={labelStyle}><RiCalendarLine style={{ display: 'inline', marginRight: '0.3rem' }} />Date of Project / Event</label>
+            <input type="date" style={{ ...inputStyle, colorScheme: 'dark' }} value={form.eventDate}
+              onChange={e => handle('eventDate', e.target.value)}
+              onFocus={e => e.target.style.borderColor = '#7c3aed'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+            />
+          </div>
+
+          {/* Row 4: Description */}
+          <div>
+            <label style={labelStyle}>Description *</label>
+            <textarea rows={3} style={{ ...inputStyle, resize: 'none', lineHeight: 1.6 }}
+              placeholder="Briefly describe your project, what problem it solves..."
+              value={form.description} onChange={e => handle('description', e.target.value)}
+              onFocus={e => e.target.style.borderColor = '#7c3aed'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+            />
+          </div>
+
+          {/* Row 5: Tech Stack */}
+          <div>
+            <label style={labelStyle}><RiCodeSSlashLine style={{ display: 'inline', marginRight: '0.3rem' }} />Tech Stack *</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.6rem' }}>
+              {form.techStack.map(t => (
+                <span key={t} onClick={() => removeTech(t)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem', fontWeight: 700, padding: '0.25rem 0.65rem', borderRadius: '100px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', cursor: 'pointer' }}>
+                  {t} <RiCloseLine size={12} />
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {TECH_OPTIONS.filter(t => !form.techStack.includes(t)).slice(0, 8).map(t => (
+                <button key={t} type="button" onClick={() => addTech(t)}
+                  style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.25rem 0.65rem', borderRadius: '100px', background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569', cursor: 'pointer' }}>
+                  + {t}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <input style={{ ...inputStyle, flex: 1 }} placeholder="Or type custom tech..."
+                value={techInput} onChange={e => setTechInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTech(techInput))}
+                onFocus={e => e.target.style.borderColor = '#7c3aed'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              />
+              <button type="button" onClick={() => addTech(techInput)}
+                style={{ padding: '0.75rem 1rem', borderRadius: '12px', background: '#2563eb', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>
+                Add
+              </button>
+            </div>
+          </div>
+
+          {error && <p style={{ color: '#dc2626', fontSize: '0.85rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '0.6rem 1rem', margin: 0 }}>{error}</p>}
+
+          {/* Submit */}
+          <button type="submit" disabled={submitting}
+            style={{ padding: '0.9rem', borderRadius: '14px', background: submitting ? 'rgba(124,58,237,0.4)' : 'linear-gradient(135deg, #7c3aed, #06b6d4)', border: 'none', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'opacity 0.2s', marginTop: '0.5rem' }}>
+            {submitting ? 'Submitting...' : <><RiCheckLine size={18} /> Submit Project</>}
+          </button>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
 };
 
 // ── Project Detail Modal ───────────────────────────────────────────────────
@@ -172,6 +411,7 @@ const ProjectsPage = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [showSubmit, setShowSubmit] = useState(false);
 
   useEffect(() => { fetchProjects(); }, []);
 
@@ -231,7 +471,9 @@ const ProjectsPage = () => {
           <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.25rem' }}>Project Showcase</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>Discover and star open-source projects built by the community.</p>
         </div>
-        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', borderRadius: '12px', background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 10px 25px rgba(124,58,237,0.3)' }}>
+        <button
+          onClick={() => setShowSubmit(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.25rem', borderRadius: '12px', background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 10px 25px rgba(124,58,237,0.3)' }}>
           <RiAddLine size={18} /> Submit Project
         </button>
       </motion.div>
@@ -279,6 +521,18 @@ const ProjectsPage = () => {
           onFeatureToggle={handleFeatureToggle}
         />
       )}
+
+      {/* Submit Project Modal */}
+      <AnimatePresence>
+        {showSubmit && (
+          <SubmitProjectModal
+            onClose={() => setShowSubmit(false)}
+            onSuccess={(newProject) => {
+              setProjects(prev => [newProject, ...prev]);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

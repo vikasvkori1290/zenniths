@@ -47,6 +47,15 @@ const projectSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    teamName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    eventDate: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
